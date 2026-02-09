@@ -14,73 +14,36 @@
 #include <string.h>
 #include <threads.h>
 #include <unistd.h>
+#include <linux/limits.h>
 #include <sys/wait.h>
 #include "minishell1.h"
 
-int run_other(char **args, char **env)
+void ms_teardown(ms_shell_context_t *context)
 {
-    int status;
-    __pid_t npid = fork();
+    list_t *env = context->env;
+    ms_env_entry_t *entry;
 
-    if (npid == 0) {
-        execvpe(args[0], args, env);
-        dprintf(1, "%s: %m\n", args[0]);
-        exit(1);
+    while (env) {
+        entry = ll_shift(&env);
+        free(entry->key);
+        free(entry->value);
+        free(entry);
     }
-    status = 0;
-    waitpid(npid, &status, 0);
-    return status;
 }
 
-int run_exit(char **args, char **env)
-{
-    char *expr = my_join(" ", args + 1);
-    char *endptr;
-    int status;
-
-    if (!expr || strlen(expr) == 0) {
-        free(expr);
-        free_str_arr(args);
-        exit(0);
-    }
-    status = (int) strtol(expr, &endptr, 10);
-    if (*endptr) {
-        free(expr);
-        dprintf(1, "exit: Expression Syntax.\n");
-        return 0;
-    }
-    free(expr);
-    free_str_arr(args);
-    exit(status);
-}
-
-int run_cd(char **args, char **env)
-{
-    char *expr = my_join(" ", args + 1);
-    int status = 0;
-
-    if (!expr || strlen(expr) == 0)
-        return 2;
-    status = chdir(expr);
-    if (status != 0)
-        dprintf(1, "cd: %s: %m\n", expr);
-    free(expr);
-    return 1;
-}
-
-int run_command(char **args, char **env)
+int run_command(char **args, ms_shell_context_t *context)
 {
     if (!strcmp(args[0], "exit"))
-        return run_exit(args, env);
+        return run_exit(args, context);
     if (!strcmp(args[0], "cd"))
-        return run_cd(args, env);
-    /*if (!strcmp(args[0], "setenv"))
-        return run_setenv(args, env);
+        return run_cd(args, context);
+    if (!strcmp(args[0], "setenv"))
+        return ms_env_setenv(args + 1, context);
     if (!strcmp(args[0], "unsetenv"))
-        return run_unsetenv(args, env);
+        return ms_env_unset(args + 1, context);
     if (!strcmp(args[0], "env"))
-        return run_env(args, env);*/
-    return run_other(args, env);
+        return ms_env_show(args + 1, context);
+    return run_other(args, context);
 }
 
 static void display_prompt(ms_shell_context_t *context)
@@ -91,11 +54,53 @@ static void display_prompt(ms_shell_context_t *context)
     free(cwd);
 }
 
-static void process_line(ms_shell_context_t *context, char *line, char **env)
+static size_t expand_tilde_size(ms_shell_context_t *context, char *line)
 {
-    char **args = my_explode(line, " ");
+    size_t expansion_size = 0;
+    char *expansion_string = ms_get_env_value("HOME", context);
 
-    context->last_exit_status = run_command(args, env);
+    for (int chr = 0; line[chr]; chr++) {
+        if (line[chr] == '~')
+            expansion_size += my_strlen(expansion_string);
+        else
+            expansion_size += 1;
+    }
+    return expansion_size;
+}
+
+static char *expand_tilde(ms_shell_context_t *context, char *line)
+{
+    int expansion_size = 0;
+    char *expansion_string = ms_get_env_value("HOME", context);
+    char *expanded_line = my_calloc(expand_tilde_size(context, line) + 1,
+        sizeof(char));
+
+    if (!expanded_line)
+        return NULL;
+    for (int chr = 0; line[chr]; chr++) {
+        if (line[chr] == '~') {
+            my_strcpy(expanded_line + expansion_size, expansion_string);
+            expansion_size += my_strlen(expansion_string);
+        } else {
+            expanded_line[expansion_size] = line[chr];
+            expansion_size += 1;
+        }
+    }
+    expanded_line[expansion_size] = '\0';
+    return expanded_line;
+}
+
+static void process_line(ms_shell_context_t *context, char *line)
+{
+    char *expanded_line = expand_tilde(context, line);
+    char **args;
+
+    if (expanded_line) {
+        args = my_explode(expanded_line, " \t\n");
+        free(expanded_line);
+    } else
+        args = my_explode(line, " \t\n");
+    context->last_exit_status = run_command(args, context);
     free_str_arr(args);
 }
 
@@ -106,6 +111,7 @@ int main(int argc, char **argv, char **env)
     char *buf = NULL;
     ssize_t read;
 
+    ms_populate_env_from_dump(env, &context);
     while (1) {
         display_prompt(&context);
         read = getline(&buf, &bufsize, stdin);
@@ -114,8 +120,9 @@ int main(int argc, char **argv, char **env)
         if (read == 0)
             continue;
         buf[read - 1] = '\0';
-        process_line(&context, buf, env);
+        process_line(&context, buf);
     }
     free(buf);
-    return 0;
+    ms_teardown(&context);
+    return context.last_exit_status;
 }

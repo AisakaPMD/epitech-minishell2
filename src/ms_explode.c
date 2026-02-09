@@ -42,11 +42,13 @@ static int count_words_loop(int is_word, int *in_word)
     return nb_words;
 }
 
-static int count_words(char const *str, char const *separator)
+int count_words(char const *str, char const *separator)
 {
     int in_word = 0;
     int nb_words = 0;
 
+    if (!str || !separator)
+        return 0;
     for (int i = 0; str[i]; i++) {
         nb_words += count_words_loop(is_word(str[i], separator), &in_word);
     }
@@ -58,8 +60,11 @@ char **my_explode(char const *str, char const *separator)
     int word_len = 0;
     int cur_word = 0;
     int words = count_words(str, separator);
-    char **array = malloc(sizeof(char *) * (words + 1));
+    char **array;
 
+    if (!str)
+        return NULL;
+    array = malloc(sizeof(char *) * (words + 1));
     for (int i = 0; str[i]; i++) {
         if (is_word(str[i], separator)) {
             word_len = wordlen(str + i, separator);

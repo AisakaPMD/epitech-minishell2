@@ -9,7 +9,8 @@
 #
 
 NAME = minishell1
-SRC_FILENAMES = main.c ms_explode.c ms_utils.c
+SRC_FILENAMES = main.c ms_explode.c ms_utils.c ms_path_explorer.c \
+	ms_env_manager.c ms_env_commands.c ms_dir_commands.c
 HEADERS = linked_list.h my.h my_printf.h minishell1.h
 
 
