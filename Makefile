@@ -29,7 +29,7 @@ LIBMY_DIR = $(LIBS_DIR)/mylite
 LIBMY_MAKE = $(MAKE) -C $(LIBMY_DIR)
 LIBMY_BIN = libmy.a
 
-CFLAGS += -D_GNU_SOURCE=1 -I$(HEADERS_DIR)
+CFLAGS += -I$(HEADERS_DIR)
 LINKER_FLAGS += -Llib -lmy
 
 codingstyle: CC = epiclang
