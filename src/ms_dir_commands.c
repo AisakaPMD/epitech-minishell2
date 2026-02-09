@@ -19,8 +19,9 @@
 
 #include "minishell1.h"
 
-static void fork_callback(char **args, char **env)
+static void fork_callback(char *exec, char **args, char **env)
 {
+    args[0] = exec;
     execve(args[0], args, env);
     my_dprintf(2, "%s: %s\n", args[0], strerror(errno));
     exit(1);
@@ -33,18 +34,16 @@ int run_other(char **args, ms_shell_context_t *context)
     char **env_dump;
     __pid_t npid;
 
-    if (!(args[0][0] == '.' || args[0][0] == '/')) {
-        if (get_cmd_path(context, args[0], full_path)) {
-            args[0] = full_path;
-        } else {
-            my_dprintf(2, "%s: Command not found.\n", args[0]);
-            return -1;
-        }
+    if (args[0][0] == '.' || args[0][0] == '/') {
+        full_path = args[0];
+    } else if (!get_cmd_path(context, args[0], full_path)) {
+        my_dprintf(2, "%s: Command not found.\n", args[0]);
+        return -1;
     }
     env_dump = ms_dump_env(context);
     npid = fork();
     if (npid == 0)
-        fork_callback(args, env_dump);
+        fork_callback(full_path, args, env_dump);
     waitpid(npid, &status, 0);
     free_str_arr(env_dump);
     return status;
