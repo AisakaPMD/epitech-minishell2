@@ -19,6 +19,7 @@
 
 int run_other(char **args, char **env)
 {
+    int status;
     __pid_t npid = fork();
 
     if (npid == 0) {
@@ -26,9 +27,7 @@ int run_other(char **args, char **env)
         dprintf(1, "%s: %m\n", args[0]);
         exit(1);
     }
-
-    // We are the old!
-    int status = 0;
+    status = 0;
     waitpid(npid, &status, 0);
     return status;
 }
@@ -37,12 +36,14 @@ int run_exit(char **args, char **env)
 {
     char *expr = my_join(" ", args + 1);
     char *endptr;
+    int status;
+
     if (!expr || strlen(expr) == 0) {
         free(expr);
         free_str_arr(args);
         exit(0);
     }
-    int status = (int) strtol(expr, &endptr, 10);
+    status = (int) strtol(expr, &endptr, 10);
     if (*endptr) {
         free(expr);
         dprintf(1, "exit: Expression Syntax.\n");
@@ -82,28 +83,38 @@ int run_command(char **args, char **env)
     return run_other(args, env);
 }
 
+static void display_prompt(ms_shell_context_t *context)
+{
+    char *cwd = getcwd(NULL, 0);
+
+    my_printf("[%d %s]$ ", context->last_exit_status, cwd);
+    free(cwd);
+}
+
+static void process_line(ms_shell_context_t *context, char *line, char **env)
+{
+    char **args = my_explode(line, " ");
+
+    context->last_exit_status = run_command(args, env);
+    free_str_arr(args);
+}
+
 int main(int argc, char **argv, char **env)
 {
+    ms_shell_context_t context = {0};
     size_t bufsize = 0;
     char *buf = NULL;
     ssize_t read;
-    char *cwd;
-    int last_status = 0;
 
     while (1) {
-        cwd = getcwd(NULL, 0);
-        printf("[%d %s]$ ", last_status, cwd);
-        free(cwd);
-        fflush(stdout);
+        display_prompt(&context);
         read = getline(&buf, &bufsize, stdin);
         if (read == -1)
             break;
         if (read == 0)
             continue;
         buf[read - 1] = '\0';
-        char **args = my_explode(buf, " ");
-        last_status = run_command(args, env);
-        free_str_arr(args);
+        process_line(&context, buf, env);
     }
     free(buf);
     return 0;

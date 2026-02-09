@@ -96,9 +96,9 @@ char *my_join(char const *separator, char **str_arr)
         return NULL;
     for (int i = 0; str_arr[i]; i++) {
         if (!first)
-            strcat(str, separator);
+            my_strcat(str, separator);
         first = 0;
-        strcat(str, str_arr[i]);
+        my_strcat(str, str_arr[i]);
     }
     str[len] = 0;
     return str;

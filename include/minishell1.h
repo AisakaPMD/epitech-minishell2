@@ -8,8 +8,20 @@
 */
 
 #ifndef MINISHELL1_H
-#define MINISHELL1_H
+    #define MINISHELL1_H
 
+    #include "my.h"
+    #include "linked_list.h"
+    #include "my_printf.h"
+
+typedef struct ms_shell_context_s ms_shell_context_t;
+
+struct ms_shell_context_s {
+    unsigned char last_exit_status;
+    char *history[50];
+    int history_index;
+
+};
 
 // Explode utility
 char **my_explode(char const *str, char const *separator);
