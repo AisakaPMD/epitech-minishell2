@@ -53,13 +53,13 @@ void ms_set_env_value(char *key, char *value, ms_shell_context_t *context)
         entry = (*env)->data;
         if (!my_strcmp(entry->key, key)) {
             free(entry->value);
-            entry->value = strdup(value);
+            entry->value = my_strdup(value);
             return;
         }
     }
     entry = malloc(sizeof(ms_env_entry_t));
-    entry->key = strdup(key);
-    entry->value = strdup(value);
+    entry->key = my_strdup(key);
+    entry->value = my_strdup(value);
     ll_unshift(env, entry);
 }
 

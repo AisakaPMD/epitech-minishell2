@@ -33,15 +33,15 @@ void ms_teardown(ms_shell_context_t *context)
 
 int run_command(char **args, ms_shell_context_t *context)
 {
-    if (!strcmp(args[0], "exit"))
+    if (!my_strcmp(args[0], "exit"))
         return run_exit(args, context);
-    if (!strcmp(args[0], "cd"))
+    if (!my_strcmp(args[0], "cd"))
         return run_cd(args, context);
-    if (!strcmp(args[0], "setenv"))
+    if (!my_strcmp(args[0], "setenv"))
         return ms_env_setenv(args + 1, context);
-    if (!strcmp(args[0], "unsetenv"))
+    if (!my_strcmp(args[0], "unsetenv"))
         return ms_env_unset(args + 1, context);
-    if (!strcmp(args[0], "env"))
+    if (!my_strcmp(args[0], "env"))
         return ms_env_show(args + 1, context);
     return run_other(args, context);
 }

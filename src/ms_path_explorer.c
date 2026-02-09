@@ -25,7 +25,7 @@ int is_file_in_dir(char *dir, char *search)
         dp = readdir(dirp);
         if (!dp)
             break;
-        if (!strcmp(dp->d_name, search)) {
+        if (!my_strcmp(dp->d_name, search)) {
             found = 1;
             break;
         }

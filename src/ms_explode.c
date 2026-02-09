@@ -68,7 +68,7 @@ char **my_explode(char const *str, char const *separator)
     for (int i = 0; str[i]; i++) {
         if (is_word(str[i], separator)) {
             word_len = wordlen(str + i, separator);
-            array[cur_word] = strndup(str + i, word_len);
+            array[cur_word] = my_strndup(str + i, word_len);
             cur_word++;
             i += word_len - 1;
         }
@@ -84,9 +84,9 @@ static size_t joined_length(char const *separator, char **str_arr)
 
     for (int i = 0; str_arr[i]; i++) {
         if (!first)
-            len += strlen(separator);
+            len += my_strlen(separator);
         first = 0;
-        len += strlen(str_arr[i]);
+        len += my_strlen(str_arr[i]);
     }
     return len;
 }
