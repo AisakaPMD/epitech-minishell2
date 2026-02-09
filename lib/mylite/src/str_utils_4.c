@@ -105,9 +105,14 @@ char *my_strdup(char const *src)
 
 char *my_strndup(char const *src, int nb)
 {
-    char *dst = malloc(sizeof(char) * (nb + 1));
+    int strlen = my_strlen(src);
+    char *dst;
 
+    if (nb > strlen)
+        nb = strlen;
+    dst = malloc(sizeof(char) * (nb + 1));
     my_strncpy(dst, src, nb);
+    dst[nb] = '\0';
     return dst;
 }
 
