@@ -8,3 +8,4 @@ bin
 *.profraw
 .idea
 minishell1
+mysh
