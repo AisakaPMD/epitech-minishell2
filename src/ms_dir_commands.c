@@ -27,6 +27,29 @@ static void fork_callback(char *exec, char **args, char **env)
     exit(1);
 }
 
+static void signal_error_message(int signal)
+{
+    char coredumped = WCOREDUMP(signal);
+    int sigcode = WTERMSIG(signal);
+
+    switch (sigcode) {
+        case SIGSEGV:
+            my_fputs(2, "Segmentation fault");
+            break;
+        case SIGFPE:
+            my_fputs(2, "Floating point exception");
+            break;
+        case SIGABRT:
+            my_fputs(2, "Aborted");
+            break;
+        default:
+            my_dprintf(2, "Process terminated by signal %d", sigcode);
+    }
+    if (coredumped)
+        my_fputs(2, " (core dumped)");
+    my_fputs(2, "\n");
+}
+
 int run_other(char **args, ms_shell_context_t *context)
 {
     int status = 0;
@@ -46,6 +69,8 @@ int run_other(char **args, ms_shell_context_t *context)
         fork_callback(full_path, args, env_dump);
     waitpid(npid, &status, 0);
     free_str_arr(env_dump);
+    if (WIFSIGNALED(status))
+        signal_error_message(status);
     return status;
 }
 
