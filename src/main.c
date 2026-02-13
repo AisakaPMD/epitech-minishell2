@@ -124,5 +124,6 @@ int main(int argc, char **argv, char **env)
     }
     free(buf);
     ms_teardown(&context);
+    my_putstr("\n");
     return context.last_exit_status;
 }
