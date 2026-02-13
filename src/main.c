@@ -29,10 +29,14 @@ void ms_teardown(ms_shell_context_t *context)
         free(entry->value);
         free(entry);
     }
+    if (context->last_working_dir)
+        free(context->last_working_dir);
 }
 
-int run_command(char **args, ms_shell_context_t *context)
+int run_command(char **args, ms_shell_context_t *context)  
 {
+    if (!args || !args[0])
+        return 0;
     if (!my_strcmp(args[0], "exit"))
         return run_exit(args, context);
     if (!my_strcmp(args[0], "cd"))
@@ -60,7 +64,7 @@ static size_t expand_tilde_size(ms_shell_context_t *context, char *line)
     char *expansion_string = ms_get_env_value("HOME", context);
 
     for (int chr = 0; line[chr]; chr++) {
-        if (line[chr] == '~')
+        if (line[chr] == '~' && (chr == 0 || line[chr - 1] == ' '))
             expansion_size += my_strlen(expansion_string);
         else
             expansion_size += 1;
@@ -78,7 +82,7 @@ static char *expand_tilde(ms_shell_context_t *context, char *line)
     if (!expanded_line)
         return NULL;
     for (int chr = 0; line[chr]; chr++) {
-        if (line[chr] == '~') {
+        if (line[chr] == '~' && (chr == 0 || line[chr - 1] == ' ')) {
             my_strcpy(expanded_line + expansion_size, expansion_string);
             expansion_size += my_strlen(expansion_string);
         } else {
