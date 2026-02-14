@@ -33,7 +33,7 @@ void ms_teardown(ms_shell_context_t *context)
         free(context->last_working_dir);
 }
 
-int run_command(char **args, ms_shell_context_t *context)  
+int run_command(char **args, ms_shell_context_t *context)
 {
     if (!args || !args[0])
         return 0;
