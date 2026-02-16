@@ -30,6 +30,7 @@ struct ms_env_entry_s {
 };
 
 struct ms_shell_context_s {
+    char *line_buffer;
     unsigned char last_exit_status;
     char *history[50];
     int history_index;

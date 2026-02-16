@@ -25,12 +25,12 @@ void ms_teardown(ms_shell_context_t *context)
 
     while (env) {
         entry = ll_shift(&env);
-        free(entry->key);
-        free(entry->value);
-        free(entry);
+        safe_free(&entry->key);
+        safe_free(&entry->value);
+        safe_free(&entry);
     }
-    if (context->last_working_dir)
-        free(context->last_working_dir);
+    safe_free(&context->last_working_dir);
+    safe_free(&context->line_buffer);
 }
 
 int run_command(char **args, ms_shell_context_t *context)
@@ -112,21 +112,19 @@ int main(int argc, char **argv, char **env)
 {
     ms_shell_context_t context = {0};
     size_t bufsize = 0;
-    char *buf = NULL;
     ssize_t read;
 
     ms_populate_env_from_dump(env, &context);
     while (1) {
         display_prompt(&context);
-        read = getline(&buf, &bufsize, stdin);
+        read = getline(&context.line_buffer, &bufsize, stdin);
         if (read == -1)
             break;
         if (read == 0)
             continue;
-        buf[read - 1] = '\0';
-        process_line(&context, buf);
+        context.line_buffer[read - 1] = '\0';
+        process_line(&context, context.line_buffer);
     }
-    free(buf);
     ms_teardown(&context);
     my_putstr("\n");
     return context.last_exit_status;

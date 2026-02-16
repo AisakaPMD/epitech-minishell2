@@ -105,14 +105,17 @@ int run_exit(char **args, ms_shell_context_t *context)
 
 static char *cd_destination(char **args, ms_shell_context_t *context)
 {
-    char *expr = my_join(" ", args + 1);
+    char *expr;
 
+    if (args[0] == NULL || args[1] != NULL)
+        return NULL;
+    expr = my_strdup(args[0]);
     if (!expr || strlen(expr) == 0) {
-        free(expr);
+        safe_free(&expr);
         return my_strdup(ms_get_env_value(MYSH_HOME_ENV, context));
     }
     if (!my_strcmp("-", expr)) {
-        free(expr);
+        safe_free(&expr);
         expr = my_strdup(context->last_working_dir);
         if (!expr)
             expr = my_strdup("");
@@ -123,10 +126,15 @@ static char *cd_destination(char **args, ms_shell_context_t *context)
 
 int run_cd(char **args, ms_shell_context_t *context)
 {
-    char *expr = cd_destination(args, context);
+    char *expr = cd_destination(args + 1, context);
     int status = 0;
     char *cwd_buffer = getcwd(NULL, 0);
 
+    if (!expr) {
+        safe_free(&expr);
+        my_dprintf(2, "cd: Too many arguments.\n");
+        return 1;
+    }
     safe_free(&context->last_working_dir);
     context->last_working_dir = cwd_buffer;
     status = chdir(expr);
@@ -136,5 +144,5 @@ int run_cd(char **args, ms_shell_context_t *context)
     ms_set_env_value(MYSH_CWD_ENV, cwd_buffer, context);
     safe_free(&cwd_buffer);
     safe_free(&expr);
-    return status;
+    return status != 0;
 }
