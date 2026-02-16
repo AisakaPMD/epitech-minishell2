@@ -107,7 +107,7 @@ static char *cd_destination(char **args, ms_shell_context_t *context)
 {
     char *expr;
 
-    if (args[0] == NULL || args[1] != NULL)
+    if (args[0] != NULL && args[1] != NULL)
         return NULL;
     expr = my_strdup(args[0]);
     if (!expr || strlen(expr) == 0) {
