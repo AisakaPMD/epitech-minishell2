@@ -17,7 +17,7 @@
 
     #define MYSH_MSG_ABORTED "Aborted"
     #define MYSH_MSG_SEGFAULT "Segmentation fault"
-    #define MYSH_MSG_FLTPTEXCEP "Floating point exception"
+    #define MYSH_MSG_FLTPTEXCEP "Floating exception"
     #define MYSH_MSG_SIGOTHER "Process terminated by signal %d"
     #define MYSH_MSG_COREDUMP " (core dumped)"
 
