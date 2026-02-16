@@ -18,16 +18,23 @@
 #include <sys/wait.h>
 
 #include "minishell1.h"
+#include <sys/stat.h>
 
 static void fork_callback(char *exec, char **args, char **env)
 {
+    struct stat statres = {0};
+
     args[0] = exec;
+    if (stat(args[0], &statres) == -1 && errno == ENOENT) {
+        my_dprintf(2, "%s: Command not found.\n", args[0]);
+        exit(1);
+    }
     execve(args[0], args, env);
     my_dprintf(2, "%s: %s.\n", args[0], strerror(errno));
     exit(1);
 }
 
-static void signal_error_message(int signal)
+static int signal_error_message(int signal)
 {
     char coredumped = WCOREDUMP(signal);
     int sigcode = WTERMSIG(signal);
@@ -48,6 +55,7 @@ static void signal_error_message(int signal)
     if (coredumped)
         my_fputs(2, MYSH_MSG_COREDUMP);
     my_fputs(2, "\n");
+    return sigcode | 0x80;
 }
 
 int run_other(char **args, ms_shell_context_t *context)
@@ -61,7 +69,7 @@ int run_other(char **args, ms_shell_context_t *context)
         full_path = args[0];
     } else if (!get_cmd_path(context, args[0], full_path)) {
         my_dprintf(2, "%s: Command not found.\n", args[0]);
-        return -1;
+        return 1;
     }
     env_dump = ms_dump_env(context);
     npid = fork();
@@ -70,8 +78,8 @@ int run_other(char **args, ms_shell_context_t *context)
     waitpid(npid, &status, 0);
     free_str_arr(env_dump);
     if (WIFSIGNALED(status))
-        signal_error_message(status);
-    return status;
+        return signal_error_message(status);
+    return WEXITSTATUS(status);
 }
 
 int run_exit(char **args, ms_shell_context_t *context)
