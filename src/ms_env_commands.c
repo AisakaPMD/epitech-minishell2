@@ -69,7 +69,7 @@ int ms_env_setenv(char **args, ms_shell_context_t *context)
         ms_env_show(NULL, context);
         return 0;
     }
-    if (!ms_valid_envname(args[0]))
+    if (ms_valid_envname(args[0]))
         return 1;
     if (args[1])
         ms_set_env_value(args[0], args[1], context);
