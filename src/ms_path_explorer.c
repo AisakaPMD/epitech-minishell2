@@ -38,7 +38,7 @@ int is_file_in_dir(char *dir, char *search)
 
 int get_cmd_path(ms_shell_context_t *context, char *search, char *full_path)
 {
-    char *path = ms_get_env_value("PATH", context);
+    char *path = ms_get_env_value("PATH", context, 0);
     char **path_dirs = my_explode(path, ":");
 
     if (!path || !path_dirs)

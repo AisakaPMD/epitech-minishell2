@@ -43,6 +43,19 @@ int ms_env_show(char **args, ms_shell_context_t *context)
     return 0;
 }
 
+static int ms_valid_envname(char *key)
+{
+    if (!my_isalpha(key[0]))
+        return error("setenv: Variable name must begin with a letter.\n");
+    for (int i = 0; key[i]; i++)
+        if (key[i] < 'A' || key[i] > 'Z' &&
+            key[i] < 'a' || key[i] > 'z' &&
+            key[i] != '_' && key[i] != '.')
+            return error("setenv: Variable name must contain "
+                "alphanumeric characters.\n");
+    return 0;
+}
+
 int ms_env_setenv(char **args, ms_shell_context_t *context)
 {
     int argc = 0;
@@ -56,6 +69,8 @@ int ms_env_setenv(char **args, ms_shell_context_t *context)
         ms_env_show(NULL, context);
         return 0;
     }
+    if (!ms_valid_envname(args[0]))
+        return 1;
     if (args[1])
         ms_set_env_value(args[0], args[1], context);
     else

@@ -61,7 +61,7 @@ static void display_prompt(ms_shell_context_t *context)
 static size_t expand_tilde_size(ms_shell_context_t *context, char *line)
 {
     size_t expansion_size = 0;
-    char *expansion_string = ms_get_env_value("HOME", context);
+    char *expansion_string = ms_get_env_value(MYSH_HOME_ENV, context, 1);
 
     for (int chr = 0; line[chr]; chr++) {
         if (line[chr] == '~' && (chr == 0 || line[chr - 1] == ' '))
@@ -75,9 +75,9 @@ static size_t expand_tilde_size(ms_shell_context_t *context, char *line)
 static char *expand_tilde(ms_shell_context_t *context, char *line)
 {
     int expansion_size = 0;
-    char *expansion_string = ms_get_env_value("HOME", context);
-    char *expanded_line = my_calloc(expand_tilde_size(context, line) + 1,
-        sizeof(char));
+    char *expansion_string = ms_get_env_value(MYSH_HOME_ENV, context, 1);
+    size_t expanded_estimated = expand_tilde_size(context, line) + 1;
+    char *expanded_line = my_calloc(expanded_estimated, sizeof(char));
 
     if (!expanded_line)
         return NULL;
@@ -96,9 +96,14 @@ static char *expand_tilde(ms_shell_context_t *context, char *line)
 
 static void process_line(ms_shell_context_t *context, char *line)
 {
-    char *expanded_line = expand_tilde(context, line);
+    char *expanded_line;
     char **args;
 
+    if (my_strchr(line, '~') && !ms_get_env_value(MYSH_HOME_ENV, context, 0)) {
+        my_dprintf(2, "No $home variable set.\n");
+        return;
+    }
+    expanded_line = expand_tilde(context, line);
     if (expanded_line) {
         args = my_explode(expanded_line, " \t\n");
         free(expanded_line);

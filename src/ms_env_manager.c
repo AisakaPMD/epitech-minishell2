@@ -32,7 +32,7 @@ void ms_populate_env_from_dump(char **env_dump, ms_shell_context_t *context)
     }
 }
 
-char *ms_get_env_value(char *key, ms_shell_context_t *context)
+char *ms_get_env_value(char *key, ms_shell_context_t *context, char emptynull)
 {
     ms_env_entry_t *entry;
 
@@ -41,7 +41,9 @@ char *ms_get_env_value(char *key, ms_shell_context_t *context)
         if (!my_strcmp(entry->key, key))
             return entry->value;
     }
-    return "";
+    if (emptynull)
+        return "";
+    return NULL;
 }
 
 void ms_set_env_value(char *key, char *value, ms_shell_context_t *context)
