@@ -48,8 +48,8 @@ static int ms_valid_envname(char *key)
     if (!my_isalpha(key[0]))
         return error("setenv: Variable name must begin with a letter.\n");
     for (int i = 0; key[i]; i++)
-        if (key[i] < 'A' || key[i] > 'Z' &&
-            key[i] < 'a' || key[i] > 'z' &&
+        if ((key[i] < 'A' || key[i] > 'Z') &&
+            (key[i] < 'a' || key[i] > 'z') &&
             key[i] != '_' && key[i] != '.')
             return error("setenv: Variable name must contain "
                 "alphanumeric characters.\n");
