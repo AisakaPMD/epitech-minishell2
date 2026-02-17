@@ -103,23 +103,38 @@ int run_exit(char **args, ms_shell_context_t *context)
     exit(status);
 }
 
+static int cd_empty_dest(ms_shell_context_t *context, char **expr)
+{
+    if (!expr || !context)
+        return 1;
+    safe_free(expr);
+    *expr = my_strdup(ms_get_env_value(MYSH_HOME_ENV, context, 0));
+    if (!*expr) {
+        my_dprintf(2, "cd: No home directory.\n");
+        return 1;
+    }
+    return 0;
+}
+
 static char *cd_destination(char **args, ms_shell_context_t *context)
 {
     char *expr;
 
-    if (args[0] != NULL && args[1] != NULL)
+    if (args[0] != NULL && args[1] != NULL) {
+        my_dprintf(2, "cd: Too many arguments.\n");
         return NULL;
+    }
     expr = my_strdup(args[0]);
     if (!expr || strlen(expr) == 0) {
-        safe_free(&expr);
-        return my_strdup(ms_get_env_value(MYSH_HOME_ENV, context));
+        if (cd_empty_dest(context, &expr))
+            return NULL;
+        return expr;
     }
     if (!my_strcmp("-", expr)) {
         safe_free(&expr);
         expr = my_strdup(context->last_working_dir);
         if (!expr)
             expr = my_strdup("");
-        return expr;
     }
     return expr;
 }
@@ -132,7 +147,6 @@ int run_cd(char **args, ms_shell_context_t *context)
 
     if (!expr) {
         safe_free(&expr);
-        my_dprintf(2, "cd: Too many arguments.\n");
         return 1;
     }
     safe_free(&context->last_working_dir);

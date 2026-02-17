@@ -52,12 +52,14 @@ int count_words(char const *str, char const *separator);
 
 // Miscellaneous Utils
 int my_str_isnumerical(char const *str);
+int my_strchr(char const *str, char c);
+int error(char const *format, ...);
 
 // Env utils
 void ms_populate_env_from_dump(char **env_dump, ms_shell_context_t *context);
 char **ms_dump_env(ms_shell_context_t *context);
 void ms_set_env_value(char *key, char *value, ms_shell_context_t *context);
-char *ms_get_env_value(char *key, ms_shell_context_t *context);
+char *ms_get_env_value(char *key, ms_shell_context_t *context, char emptynull);
 void ms_unset_env_value(char *key, ms_shell_context_t *context);
 
 // Env commands
