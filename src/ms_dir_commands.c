@@ -82,22 +82,30 @@ int run_other(char **args, ms_shell_context_t *context)
     return WEXITSTATUS(status);
 }
 
+static int verify_exit_validity(char **args, int *status)
+{
+    *status = 0;
+    if (args[0] != NULL && args[1] != NULL && args[2] != NULL) {
+        my_fputs(2, "exit: Expression Syntax.\n");
+        return 1;
+    }
+    if (!args[1] || strlen(args[1]) == 0)
+        return 0;
+    if (!my_str_isnumerical(args[1])) {
+        my_dprintf(2, "exit: %s.\n", my_isnumerical(args[1][0]) ?
+            "Badly formed number" : "Expression Syntax");
+        return 1;
+    }
+    *status = my_getexit(args[1]);
+    return 0;
+}
+
 int run_exit(char **args, ms_shell_context_t *context)
 {
-    char *expr = my_join(" ", args + 1);
     int status;
 
-    if (!expr || strlen(expr) == 0) {
-        status = 0;
-    } else {
-        if (!my_str_isnumerical(expr)) {
-            free(expr);
-            my_fputs(2, "exit: Expression Syntax.\n");
-            return 1;
-        }
-        status = my_getnbr(expr);
-    }
-    free(expr);
+    if (verify_exit_validity(args, &status))
+        return 1;
     free_str_arr(args);
     ms_teardown(context);
     exit(status);

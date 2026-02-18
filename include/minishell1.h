@@ -51,9 +51,11 @@ char *my_join(char const *separator, char **str_arr);
 int count_words(char const *str, char const *separator);
 
 // Miscellaneous Utils
+int my_isnumerical(char c);
 int my_str_isnumerical(char const *str);
 int my_strchr(char const *str, char c);
 int error(char const *format, ...);
+int my_getexit(char const *str);
 
 // Env utils
 void ms_populate_env_from_dump(char **env_dump, ms_shell_context_t *context);
