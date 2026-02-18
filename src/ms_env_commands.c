@@ -45,7 +45,7 @@ int ms_env_show(char **args, ms_shell_context_t *context)
 
 static int ms_valid_envname(char *key)
 {
-    if (!my_isalpha(key[0]))
+    if (!my_isalpha(key[0]) && key[0] != '_')
         return error("setenv: Variable name must begin with a letter.\n");
     for (int i = 0; key[i]; i++)
         if ((key[i] < 'A' || key[i] > 'Z') &&
