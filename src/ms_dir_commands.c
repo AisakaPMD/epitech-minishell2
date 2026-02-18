@@ -65,7 +65,7 @@ int run_other(char **args, ms_shell_context_t *context)
     char **env_dump;
     __pid_t npid;
 
-    if (args[0][0] == '.' || args[0][0] == '/') {
+    if (my_strchr(args[0], '/')) {
         full_path = args[0];
     } else if (!get_cmd_path(context, args[0], full_path)) {
         my_dprintf(2, "%s: Command not found.\n", args[0]);
