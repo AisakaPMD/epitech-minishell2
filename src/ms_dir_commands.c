@@ -30,7 +30,10 @@ static void fork_callback(char *exec, char **args, char **env)
         exit(1);
     }
     execve(args[0], args, env);
-    my_dprintf(2, "%s: %s.\n", args[0], strerror(errno));
+    my_dprintf(2, "%s: %s.", args[0], strerror(errno));
+    if (errno == ENOEXEC)
+        my_fputs(2, " Binary file not executable.");
+    my_fputs(2, "\n");
     exit(1);
 }
 
