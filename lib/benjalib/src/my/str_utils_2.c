@@ -98,8 +98,10 @@ int my_strncmp(char const *s1, char const *s2, int n)
         return -1;
     if (!s2)
         return 1;
+    if (n == 0)
+        return 0;
     for (; s1[i] && s2[i] && s2[i] == s1[i]; i++)
-        if (n >= 0 && i >= n)
+        if (n >= 0 && i >= n - 1)
             break;
     return s1[i] - s2[i];
 }

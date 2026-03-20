@@ -17,6 +17,7 @@
 #include <linux/limits.h>
 #include <sys/wait.h>
 #include "minishell1.h"
+#include "minishell2.h"
 
 void ms_teardown(ms_shell_context_t *context)
 {
@@ -128,6 +129,9 @@ int main(int argc, char **argv, char **env)
         if (read == 0)
             continue;
         context.line_buffer[read - 1] = '\0';
+
+        cut_words(context.line_buffer);
+        continue;
         process_line(&context, context.line_buffer);
     }
     ms_teardown(&context);

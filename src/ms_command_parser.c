@@ -1,0 +1,170 @@
+/*
+** EPITECH PROJECT, 2026
+** minishell1
+** File description:
+** MiniShell utils
+** Author:
+** Amélie Ambleton--Guth
+*/
+
+#include <ctype.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <unistd.h>
+#include <stdbool.h>
+#include "minishell2.h"
+
+static int is_solo_word(char const *string)
+{
+    if (!string || !string[0])
+        return 0;
+    if (string[0] == string[1] && my_strchr("&|<>", *string))
+        return 2;
+    if (my_strchr("&;|<>()", *string))
+        return 1;
+    return 0;
+}
+
+static bool is_whitespace(char c)
+{
+    return (c == ' ' || c == '\t' || c == '\n');
+}
+
+static bool is_quote(char c)
+{
+    return (c == '\'' || c == '"' || c == '`');
+}
+
+static ms_token_type_t get_solo_token_type(char *chr)
+{
+    char const *ref = ".|;&<>()";
+
+    if (!chr || !chr[0] || !is_solo_word(chr))
+        return MS_TOKEN_WORD;
+    if (my_strncmp(chr, ">>", 2) == 0)
+        return MS_TOKEN_DOUBLE_GREATER;
+    if (my_strncmp(chr, "<<", 2) == 0)
+        return MS_TOKEN_DOUBLE_LESS;
+    if (my_strncmp(chr, "&&", 2) == 0)
+        return MS_TOKEN_AND;
+    if (my_strncmp(chr, "||", 2) == 0)
+        return MS_TOKEN_OR;
+    return my_strindexof(ref, *chr);
+}
+
+static char* sanitize_lexeme(char *lexeme, int max)
+{
+    char* duplicated;
+    int length = 0;
+
+    if (!lexeme)
+        return NULL;
+    for (int i = 0; i < max; i++) {
+        if (lexeme[i] != RECORD_SEPARATOR)
+            length++;
+    }
+    duplicated = malloc(length + 1);
+    if (!duplicated)
+        return NULL;
+    duplicated[length] = '\0';
+    for (int i = max - 1; i >= 0; i--)
+        if (lexeme[i] != RECORD_SEPARATOR) {
+            --length;
+            duplicated[length] = lexeme[i];
+        }
+    return duplicated;
+}
+
+static void add_token(list_t **lst, char *lexeme, int length)
+{
+    ms_token_t *token;
+
+    token = malloc(sizeof(ms_token_t));
+    if (!token)
+        return;
+    if (!lexeme) {
+        token->word_value = NULL;
+        token->type = MS_TOKEN_EOF;
+    } else if (is_solo_word(lexeme)) {
+        token->word_value = NULL;
+        token->type = get_solo_token_type(lexeme);
+    } else {
+        token->word_value = sanitize_lexeme(lexeme, length);
+        token->type = MS_TOKEN_WORD;
+    }
+    ll_push(lst, token);
+}
+
+int update_parser(char c, ms_parser_t *parser)
+{
+    if (c == '\\' && parser->quote_mode != MS_QUOTE_SINGLE && !parser->backslashed) {
+        parser->backslashed = true;
+        return 0;
+    }
+    if (parser->backslashed) {
+        parser->backslashed = false;
+        return 0;
+    }
+    return 0;
+}
+
+int delimit_words(char *string, list_t **lst, ms_parser_t *parser)
+{
+    int skip = is_solo_word(string);
+    int i = 0;
+
+    if (skip && !PARSER_ESCAPING(parser)) {
+        add_token(lst, string, skip);
+        return skip;
+    }
+    for (; string[i]; i++) {
+        if (parser->backslashed) {
+            parser->backslashed = false;
+            continue;
+        }
+        if (string[i] == '\'' && parser->quote_mode == MS_QUOTE_SINGLE) {
+            parser->quote_mode = MS_QUOTE_NONE;
+            string[i] = RECORD_SEPARATOR;
+            continue;
+        }
+        if (PARSER_ESCAPING(parser))
+            continue;
+        if (string[i] == '\\') {
+            parser->backslashed = true;
+            string[i] = RECORD_SEPARATOR;
+        }
+        if (string[i] == '\'') {
+            parser->quote_mode = MS_QUOTE_SINGLE;
+            string[i] = RECORD_SEPARATOR;
+            continue;
+        }
+        if (is_whitespace(string[i]) || is_solo_word(string + i))
+            break;
+    }
+    add_token(lst, string, i);
+    return i;
+}
+
+int cut_words(char *string)
+{
+    list_t *lst = NULL;
+    ms_parser_t parser = {0};
+
+    for (int i = 0; string[i]; i++) {
+        if (is_whitespace(string[i]) && !PARSER_ESCAPING(&parser))
+            continue;
+        i += delimit_words(string + i, &lst, &parser) - 1;
+    }
+    add_token(&lst, NULL, 0);
+    /*for (int i = 0; lst; i++) {
+        ms_token_t *mama = ll_shift(&lst);
+        printf(":: [%d] [%s]\n", mama->type, mama->word_value);
+        free(mama);
+    }*/
+    ms_generate_ast(lst);
+    return 0;
+}
+
+// abc def ; selon moi, selon Benjamin & bien d\'autres, le flag > est pris en pipe, comme un | en gros, avec ceci ; ce sera tout
