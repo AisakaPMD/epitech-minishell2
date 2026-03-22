@@ -88,9 +88,9 @@ static bool parse_redirection(ms_grammar_parser_t *grammar,
     ms_syntax_tree_t *redir_node;
 
     if (!(gr_testfor(grammar, MS_TOKEN_GREATER) ||
-        gr_testfor(grammar, MS_TOKEN_LESS) ||
-        gr_testfor(grammar, MS_TOKEN_DOUBLE_GREATER) ||
-        gr_testfor(grammar, MS_TOKEN_DOUBLE_LESS)))
+            gr_testfor(grammar, MS_TOKEN_LESS) ||
+            gr_testfor(grammar, MS_TOKEN_DOUBLE_GREATER) ||
+            gr_testfor(grammar, MS_TOKEN_DOUBLE_LESS)))
         return false;
     if (!gr_testahead(grammar, MS_TOKEN_WORD)) {
         fprintf(stderr, "ParseError: line %d: expected word\n", 1);
@@ -159,7 +159,8 @@ static void parse_and_or(ms_grammar_parser_t *grammar, ms_syntax_tree_t *parent)
         node->type = MS_TREE_PIPELINE;
         parse_pipeline(grammar, node);
         ll_push(&parent->children, node);
-        if (gr_testfor(grammar, MS_TOKEN_AND) || gr_testfor(grammar, MS_TOKEN_OR))
+        if (gr_testfor(grammar, MS_TOKEN_AND) ||
+            gr_testfor(grammar, MS_TOKEN_OR))
             ll_push(&parent->children, gr_consume(grammar));
         else
             break;
@@ -169,9 +170,8 @@ static void parse_and_or(ms_grammar_parser_t *grammar, ms_syntax_tree_t *parent)
 static void parse_sequence(ms_grammar_parser_t *grammar, ms_syntax_tree_t *root)
 {
     ms_syntax_tree_t *node;
+    ms_token_t *token;
 
-    if (gr_at_end(grammar))
-        return;
     while (!gr_at_end(grammar)) {
         if (gr_match(grammar, MS_TOKEN_SEMICOLON))
             continue;
@@ -181,7 +181,7 @@ static void parse_sequence(ms_grammar_parser_t *grammar, ms_syntax_tree_t *root)
         parse_and_or(grammar, node);
         ll_push(&root->children, node);
         if (!gr_match(grammar, MS_TOKEN_SEMICOLON) && !gr_at_end(grammar)) {
-            ms_token_t *token = gr_consume(grammar);
+            token = gr_consume(grammar);
             fprintf(stderr, "ParseError: line %d: unexpected token 0x%02X "
                 "[%s]\n", 1, token->type, token->word_value);
             grammar->errored = true;
@@ -190,49 +190,7 @@ static void parse_sequence(ms_grammar_parser_t *grammar, ms_syntax_tree_t *root)
     }
 }
 
-static char *type_to_str(ms_tree_type_t type)
-{
-    switch (type) {
-    case MS_TREE_SEQUENCE:
-        return "sequence";
-    case MS_TREE_AND_OR:
-        return "and_or";
-    case MS_TREE_PIPELINE:
-        return "pipeline";
-    case MS_TREE_SIMPLE_COMMAND:
-        return "simple_command";
-    case MS_TREE_REDIRECTION:
-        return "redirection";
-    case MS_TREE_COMMAND:
-        return "command";
-    default:
-        return "unknown";
-    }
-}
-
-static void print_tree(ms_syntax_tree_t *tree, int depth)
-{
-    if (!tree)
-        return;
-    if (tree->type == MS_TREE_WORD) {
-        printf("%*s > WORD [%s]\n", depth, "",
-            (char *) ll_shift(&tree->children));
-        return;
-    }
-    printf("%*s > %s\n", depth, "", type_to_str(tree->type));
-    if (tree->type == MS_TREE_REDIRECTION) {
-        ms_token_t *tk = ll_shift(&tree->children);
-        printf("%*s > Type: [%s]\n", depth, "",
-            tk->type == MS_TOKEN_GREATER ? ">" :
-            tk->type == MS_TOKEN_LESS ? "<" :
-            tk->type == MS_TOKEN_DOUBLE_GREATER ? ">>" :
-            tk->type == MS_TOKEN_DOUBLE_LESS ? "<<" : "unknown");
-    }
-    while (tree->children) {
-        print_tree(ll_shift(&tree->children), depth + 2);
-    }
-}
-
+// TODO free the tree!!
 ms_syntax_tree_t *ms_generate_ast(list_t *tokens)
 {
     ms_grammar_parser_t grammar = {0};
@@ -246,9 +204,7 @@ ms_syntax_tree_t *ms_generate_ast(list_t *tokens)
     parse_sequence(&grammar, root);
     if (grammar.errored) {
         fprintf(stderr, "-- Terminating.\n");
-        // TODO free the tree!!
         return NULL;
     }
-    print_tree(root, 0);
     return root;
 }

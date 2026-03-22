@@ -14,10 +14,15 @@
     #include "benjalib.h"
     #include "minishell1.h"
 
-#define PARSER_ESCAPING(x) \
-    ((x)->backslashed || (x)->quote_mode != MS_QUOTE_NONE)
+    #define PARSER_QUOTING(x) ((x)->quote_mode != MS_QUOTE_NONE)
+    #define PARSER_ESCAPING(x) ((x)->backslashed || PARSER_QUOTING(x))
 
-#define RECORD_SEPARATOR '\x1e'
+    #define VIS_VALID(x, y, z) (!(x) || y->type != z)
+
+    #define RECORD_SEPARATOR '\x1e'
+
+    #define RD_OUT(x) (x == MS_TOKEN_GREATER || x == MS_TOKEN_DOUBLE_GREATER)
+    #define RD_IN(x) (x == MS_TOKEN_LESS || x == MS_TOKEN_DOUBLE_LESS)
 
 typedef struct ms_parser_s ms_parser_t;
 typedef struct ms_grammar_parser_s ms_grammar_parser_t;
@@ -83,6 +88,10 @@ typedef struct {
     ms_tree_type_t type;
 } ms_syntax_tree_t;
 
+// Enum to string utils
+char *ms_tree_type_to_str(ms_tree_type_t type);
+char *ms_token_to_str(ms_token_t *token);
+void print_tree(ms_syntax_tree_t *tree, int depth);
 
 // Grammar Parser Utils
 ms_token_t *gr_match(ms_grammar_parser_t *grammar, ms_token_type_t type);
@@ -94,7 +103,17 @@ bool gr_at_end(ms_grammar_parser_t *grammar);
 // Grammar Parser
 ms_syntax_tree_t *ms_generate_ast(list_t *tokens);
 
-int cut_words(char *string);
+// Running
+int ms_runner(list_t *tokens, ms_shell_context_t *context);
+int run_command(char **args, ms_shell_context_t *context);
+int visit_simple_command(ms_syntax_tree_t *node, ms_shell_context_t *context,
+    int fdin, int fdout);
+
+// Pipelines
+int pipeline_handler(ms_syntax_tree_t *node, ms_shell_context_t *context);
+
+// Lexing
+list_t *cut_words(char *string);
 
 int my_strindexof(char const *str, char c);
 

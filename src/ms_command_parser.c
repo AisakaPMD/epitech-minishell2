@@ -54,9 +54,9 @@ static ms_token_type_t get_solo_token_type(char *chr)
     return my_strindexof(ref, *chr);
 }
 
-static char* sanitize_lexeme(char *lexeme, int max)
+static char *sanitize_lexeme(char *lexeme, int max)
 {
-    char* duplicated;
+    char *duplicated;
     int length = 0;
 
     if (!lexeme)
@@ -96,16 +96,40 @@ static void add_token(list_t **lst, char *lexeme, int length)
     }
     ll_push(lst, token);
 }
-
+/*
 int update_parser(char c, ms_parser_t *parser)
 {
-    if (c == '\\' && parser->quote_mode != MS_QUOTE_SINGLE && !parser->backslashed) {
+    if (c == '\\' && parser->quote_mode != MS_QUOTE_SINGLE
+        && !parser->backslashed) {
         parser->backslashed = true;
         return 0;
     }
     if (parser->backslashed) {
         parser->backslashed = false;
         return 0;
+    }
+    return 0;
+}*/
+
+int update_parser2(char *string, int i, ms_parser_t *parser)
+{
+    if (parser->backslashed) {
+        parser->backslashed = false;
+        return 1;
+    }
+    if (string[i] == '\'' && parser->quote_mode == MS_QUOTE_SINGLE) {
+        parser->quote_mode = MS_QUOTE_NONE;
+        string[i] = RECORD_SEPARATOR;
+        return 1;
+    }
+    if (PARSER_ESCAPING(parser))
+        return 1;
+    parser->backslashed = string[i] == '\\';
+    if (string[i] == '\'')
+        parser->quote_mode = MS_QUOTE_SINGLE;
+    if (PARSER_ESCAPING(parser)) {
+        string[i] = RECORD_SEPARATOR;
+        return 1;
     }
     return 0;
 }
@@ -120,26 +144,8 @@ int delimit_words(char *string, list_t **lst, ms_parser_t *parser)
         return skip;
     }
     for (; string[i]; i++) {
-        if (parser->backslashed) {
-            parser->backslashed = false;
+        if (update_parser2(string, i, parser))
             continue;
-        }
-        if (string[i] == '\'' && parser->quote_mode == MS_QUOTE_SINGLE) {
-            parser->quote_mode = MS_QUOTE_NONE;
-            string[i] = RECORD_SEPARATOR;
-            continue;
-        }
-        if (PARSER_ESCAPING(parser))
-            continue;
-        if (string[i] == '\\') {
-            parser->backslashed = true;
-            string[i] = RECORD_SEPARATOR;
-        }
-        if (string[i] == '\'') {
-            parser->quote_mode = MS_QUOTE_SINGLE;
-            string[i] = RECORD_SEPARATOR;
-            continue;
-        }
         if (is_whitespace(string[i]) || is_solo_word(string + i))
             break;
     }
@@ -147,7 +153,7 @@ int delimit_words(char *string, list_t **lst, ms_parser_t *parser)
     return i;
 }
 
-int cut_words(char *string)
+list_t *cut_words(char *string)
 {
     list_t *lst = NULL;
     ms_parser_t parser = {0};
@@ -158,13 +164,5 @@ int cut_words(char *string)
         i += delimit_words(string + i, &lst, &parser) - 1;
     }
     add_token(&lst, NULL, 0);
-    /*for (int i = 0; lst; i++) {
-        ms_token_t *mama = ll_shift(&lst);
-        printf(":: [%d] [%s]\n", mama->type, mama->word_value);
-        free(mama);
-    }*/
-    ms_generate_ast(lst);
-    return 0;
+    return lst;
 }
-
-// abc def ; selon moi, selon Benjamin & bien d\'autres, le flag > est pris en pipe, comme un | en gros, avec ceci ; ce sera tout
