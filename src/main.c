@@ -114,13 +114,18 @@ static void process_line(ms_shell_context_t *context, char *line)
     free_str_arr(args);
 }
 
-static int process_line_v2(ms_shell_context_t *context, char *line)
+static int process_line_v2(ms_shell_context_t *context, char *line, ssize_t len)
 {
     list_t *tokens;
+    char *expanded;
 
     if (!context || !line)
         return 84;
-    tokens = cut_words(line);
+    expanded = expand_paths(line, context, len);
+    if (!expanded)
+        return 84;
+    tokens = cut_words(expanded);
+    free(expanded);
     if (!tokens)
         return 84;
     return ms_runner(tokens, context);
@@ -140,9 +145,10 @@ int main(int argc, char **argv, char **env)
             break;
         if (read == 0)
             continue;
-        context.line_buffer[read - 1] = '\0';
+        if (context.line_buffer[read - 1] == '\n')
+            context.line_buffer[read - 1] = '\0';
         context.last_exit_status =
-            process_line_v2(&context, context.line_buffer);
+            process_line_v2(&context, context.line_buffer, read);
     }
     ms_teardown(&context);
     my_putstr("\n");

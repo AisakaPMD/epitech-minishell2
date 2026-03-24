@@ -14,6 +14,8 @@
     #include "benjalib.h"
     #include "minishell1.h"
 
+    #define IS_SEPARATOR(x) (x == ' ' || x == '\t' || x == '\n')
+
     #define PARSER_QUOTING(x) ((x)->quote_mode != MS_QUOTE_NONE)
     #define PARSER_ESCAPING(x) ((x)->backslashed || PARSER_QUOTING(x))
 
@@ -114,6 +116,9 @@ int pipeline_handler(ms_syntax_tree_t *node, ms_shell_context_t *context);
 
 // Lexing
 list_t *cut_words(char *string);
+
+// Path expansion
+char *expand_paths(char *string, ms_shell_context_t *ctx, ssize_t len);
 
 int my_strindexof(char const *str, char c);
 
