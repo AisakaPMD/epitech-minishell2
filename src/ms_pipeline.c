@@ -68,7 +68,7 @@ int pipeline_handler(ms_syntax_tree_t *node, ms_shell_context_t *context)
     status = build_pipeline(node, context, &lastin, pid);
     if (status) {
         context->last_exit_status = status;
-        dprintf(STDERR_FILENO, "Pipeline error: %s\n", strerror(status));
+        my_dprintf(STDERR_FILENO, "Pipeline error: %s\n", strerror(status));
         return status;
     }
     for (int index = 0; index < nb_nodes; index++) {

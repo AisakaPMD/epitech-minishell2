@@ -27,7 +27,7 @@ char *join_line(list_t *lst)
     for (list_t *local = lst; local; local = local->next) {
         len += strlen(local->data);
     }
-    result = calloc(len + 1, sizeof(char));
+    result = my_calloc(len + 1, sizeof(char));
     if (!result)
         return NULL;
     while (lst) {
@@ -38,18 +38,19 @@ char *join_line(list_t *lst)
     return result;
 }
 
-char *expand_paths(char *string, ms_shell_context_t *ctx, ssize_t len)
+char *expand_paths(char *string, ms_shell_context_t *ctx)
 {
     list_t *lst = NULL;
     ms_parser_t parser = {0};
     size_t start = 0;
+    ssize_t len = strlen(string);
 
     for (int i = 0; i < len && string[i]; i++) {
         if (PARSER_ESCAPING(&parser))
             continue;
         if (string[i] == '~' && (i == 0 || IS_SEPARATOR(string[i - 1]))) {
             ll_push(&lst, strndup(string + start, i - start));
-            ll_push(&lst, strdup(ms_get_env_value("HOME", ctx, 1)));
+            ll_push(&lst, strdup(km_get(MYSH_HOME_ENV, ctx->env)));
             start = i + 1;
         }
     }

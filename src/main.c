@@ -21,17 +21,25 @@
 
 void ms_teardown(ms_shell_context_t *context)
 {
-    list_t *env = context->env;
     ms_env_entry_t *entry;
 
-    while (env) {
-        entry = ll_shift(&env);
+    while (context->env) {
+        entry = ll_shift(&context->env);
+        safe_free(&entry->key);
+        safe_free(&entry->value);
+        safe_free(&entry);
+    }
+    while (context->variables) {
+        entry = ll_shift(&context->variables);
         safe_free(&entry->key);
         safe_free(&entry->value);
         safe_free(&entry);
     }
     safe_free(&context->last_working_dir);
     safe_free(&context->line_buffer);
+    if (context->reader)
+        lr_close(context->reader);
+    context->reader = NULL;
 }
 
 int run_command(char **args, ms_shell_context_t *context)
@@ -51,77 +59,14 @@ int run_command(char **args, ms_shell_context_t *context)
     return run_other(args, context);
 }
 
-static void display_prompt(ms_shell_context_t *context)
-{
-    char *cwd = getcwd(NULL, 0);
-
-    my_printf("[%d %s]$ ", context->last_exit_status, cwd);
-    free(cwd);
-}
-
-static size_t expand_tilde_size(ms_shell_context_t *context, char *line)
-{
-    size_t expansion_size = 0;
-    char *expansion_string = ms_get_env_value(MYSH_HOME_ENV, context, 1);
-
-    for (int chr = 0; line[chr]; chr++) {
-        if (line[chr] == '~' && (chr == 0 || line[chr - 1] == ' '))
-            expansion_size += my_strlen(expansion_string);
-        else
-            expansion_size += 1;
-    }
-    return expansion_size;
-}
-
-static char *expand_tilde(ms_shell_context_t *context, char *line)
-{
-    int expansion_size = 0;
-    char *expansion_string = ms_get_env_value(MYSH_HOME_ENV, context, 1);
-    size_t expanded_estimated = expand_tilde_size(context, line) + 1;
-    char *expanded_line = my_calloc(expanded_estimated, sizeof(char));
-
-    if (!expanded_line)
-        return NULL;
-    for (int chr = 0; line[chr]; chr++) {
-        if (line[chr] == '~' && (chr == 0 || line[chr - 1] == ' ')) {
-            my_strcpy(expanded_line + expansion_size, expansion_string);
-            expansion_size += my_strlen(expansion_string);
-        } else {
-            expanded_line[expansion_size] = line[chr];
-            expansion_size += 1;
-        }
-    }
-    expanded_line[expansion_size] = '\0';
-    return expanded_line;
-}
-
-static void process_line(ms_shell_context_t *context, char *line)
-{
-    char *expanded_line;
-    char **args;
-
-    if (my_strchr(line, '~') && !ms_get_env_value(MYSH_HOME_ENV, context, 0)) {
-        my_dprintf(2, "No $home variable set.\n");
-        return;
-    }
-    expanded_line = expand_tilde(context, line);
-    if (expanded_line) {
-        args = my_explode(expanded_line, " \t\n");
-        free(expanded_line);
-    } else
-        args = my_explode(line, " \t\n");
-    context->last_exit_status = run_command(args, context);
-    free_str_arr(args);
-}
-
-static int process_line_v2(ms_shell_context_t *context, char *line, ssize_t len)
+static int process_line_v2(ms_shell_context_t *context, char *line)
 {
     list_t *tokens;
     char *expanded;
 
     if (!context || !line)
         return 84;
-    expanded = expand_paths(line, context, len);
+    expanded = expand_paths(line, context);
     if (!expanded)
         return 84;
     tokens = cut_words(expanded);
@@ -131,26 +76,39 @@ static int process_line_v2(ms_shell_context_t *context, char *line, ssize_t len)
     return ms_runner(tokens, context);
 }
 
+static void prepare_variables(ms_shell_context_t *context)
+{
+    km_set(MS_PROMPT_DEFAULT, DEFAULT_NORMAL_PROMPT, &context->variables);
+    km_set(MS_PROMPT_FOLLOWUP, DEFAULT_FOLLOWUP_PROMPT, &context->variables);
+}
+
+static int main_loop(ms_shell_context_t *context, linereader_t *lr)
+{
+    if (!lr || !context)
+        return -1;
+    ms_prompt(context, MS_PROMPT_DEFAULT);
+    context->line_buffer = lr_read(lr);
+    if (!context->line_buffer)
+        return -1;
+    context->last_exit_status = process_line_v2(context, context->line_buffer);
+    free(context->line_buffer);
+    return 0;
+}
+
 int main(int argc, char **argv, char **env)
 {
     ms_shell_context_t context = {0};
-    size_t bufsize = 0;
-    ssize_t read;
+    int return_value = 0;
 
     ms_populate_env_from_dump(env, &context);
-    while (1) {
-        display_prompt(&context);
-        read = getline(&context.line_buffer, &bufsize, stdin);
-        if (read == -1)
-            break;
-        if (read == 0)
-            continue;
-        if (context.line_buffer[read - 1] == '\n')
-            context.line_buffer[read - 1] = '\0';
-        context.last_exit_status =
-            process_line_v2(&context, context.line_buffer, read);
-    }
+    prepare_variables(&context);
+    context.reader = lr_from_stream(stdin);
+    if (!context.reader)
+        return_value = 84;
+    while (return_value == 0)
+        return_value = main_loop(&context, context.reader);
     ms_teardown(&context);
-    my_putstr("\n");
-    return context.last_exit_status;
+    if (!isatty(STDIN_FILENO))
+        my_putstr("\n");
+    return return_value == -1 ? context.last_exit_status : return_value;
 }

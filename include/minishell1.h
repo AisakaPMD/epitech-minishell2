@@ -10,9 +10,11 @@
 #ifndef MINISHELL1_H
     #define MINISHELL1_H
 
+    #include <stdbool.h>
     #include "benjalib.h"
 
     #define MYSH_HOME_ENV "HOME"
+    #define MYSH_PATH_ENV "PATH"
     #define MYSH_CWD_ENV "PWD"
 
     #define MYSH_MSG_ABORTED "Aborted"
@@ -23,19 +25,35 @@
 
 typedef struct ms_shell_context_s ms_shell_context_t;
 typedef struct ms_env_entry_s ms_env_entry_t;
+typedef struct km_entry_s km_entry_t;
+typedef list_t keymap_t;
 
 struct ms_env_entry_s {
     char *key;
     char *value;
 };
 
+struct km_entry_s {
+    char *key;
+    char *value;
+};
+
+typedef struct {
+    FILE *stream;
+    char *buf;
+    size_t size;
+    bool open_by_linereader;
+} linereader_t;
+
 struct ms_shell_context_s {
     char *line_buffer;
     unsigned char last_exit_status;
     char *history[50];
     int history_index;
-    list_t *env;
     char *last_working_dir;
+    keymap_t *variables;
+    keymap_t *env;
+    linereader_t *reader;
 };
 
 // Main
@@ -56,6 +74,13 @@ int my_str_isnumerical(char const *str);
 int my_strchr(char const *str, char c);
 int error(char const *format, ...);
 int my_getexit(char const *str);
+
+// Keymap Utility
+bool km_has(char *key, keymap_t *keymap);
+char *km_get(char *key, keymap_t *keymap);
+void km_set(char *key, char *value, keymap_t **keymap);
+void km_unset(char *key, keymap_t **keymap);
+char *km_get_or_default(char *key, keymap_t *keymap, char *deflt);
 
 // Env utils
 void ms_populate_env_from_dump(char **env_dump, ms_shell_context_t *context);

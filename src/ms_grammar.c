@@ -93,7 +93,7 @@ static bool parse_redirection(ms_grammar_parser_t *grammar,
             gr_testfor(grammar, MS_TOKEN_DOUBLE_LESS)))
         return false;
     if (!gr_testahead(grammar, MS_TOKEN_WORD)) {
-        fprintf(stderr, "ParseError: line %d: expected word\n", 1);
+        my_dprintf(STDERR_FILENO, "ParseError: line %d: expected word\n", 1);
         return false;
     }
     redir_node = malloc(sizeof(ms_syntax_tree_t));
@@ -182,8 +182,8 @@ static void parse_sequence(ms_grammar_parser_t *grammar, ms_syntax_tree_t *root)
         ll_push(&root->children, node);
         if (!gr_match(grammar, MS_TOKEN_SEMICOLON) && !gr_at_end(grammar)) {
             token = gr_consume(grammar);
-            fprintf(stderr, "ParseError: line %d: unexpected token 0x%02X "
-                "[%s]\n", 1, token->type, token->word_value);
+            my_dprintf(STDERR_FILENO, "ParseError: line %d: unexpected token "
+                "0x%02X [%s]\n", 1, token->type, token->word_value);
             grammar->errored = true;
             break;
         }

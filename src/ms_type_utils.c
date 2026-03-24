@@ -55,14 +55,14 @@ void print_tree(ms_syntax_tree_t *tree, int depth)
     if (!tree)
         return;
     if (tree->type == MS_TREE_WORD) {
-        printf("%*s > WORD [%s]\n", depth, " ",
+        my_printf("%*s > WORD [%s]\n", depth, " ",
             (char *) ll_shift(&tree->children));
         return;
     }
-    printf("%*s > %s\n", depth, "", ms_tree_type_to_str(tree->type));
+    my_printf("%*s > %s\n", depth, "", ms_tree_type_to_str(tree->type));
     if (tree->type == MS_TREE_REDIRECTION) {
         tk = ll_shift(&tree->children);
-        printf("%*s > Type: [%s]\n", depth, " ", ms_token_to_str(tk));
+        my_printf("%*s > Type: [%s]\n", depth, " ", ms_token_to_str(tk));
     }
     while (tree->children) {
         print_tree(ll_shift(&tree->children), depth + 2);

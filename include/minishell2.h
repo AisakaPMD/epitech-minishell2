@@ -26,6 +26,14 @@
     #define RD_OUT(x) (x == MS_TOKEN_GREATER || x == MS_TOKEN_DOUBLE_GREATER)
     #define RD_IN(x) (x == MS_TOKEN_LESS || x == MS_TOKEN_DOUBLE_LESS)
 
+    #define MS_PROMPT_DEFAULT "prompt"
+    #define MS_PROMPT_FOLLOWUP "prompt2"
+
+    #define DEFAULT_NORMAL_PROMPT "[%? %/]$ "
+    #define DEFAULT_FOLLOWUP_PROMPT "? "
+
+    #define MS_VAR_HOME "home"
+
 typedef struct ms_parser_s ms_parser_t;
 typedef struct ms_grammar_parser_s ms_grammar_parser_t;
 
@@ -90,6 +98,13 @@ typedef struct {
     ms_tree_type_t type;
 } ms_syntax_tree_t;
 
+// LineReader util
+linereader_t *lr_new(const char *filename);
+linereader_t *lr_from_stream(FILE *stream);
+void lr_close(linereader_t *fr);
+char *lr_read(linereader_t *fr);
+
+
 // Enum to string utils
 char *ms_tree_type_to_str(ms_tree_type_t type);
 char *ms_token_to_str(ms_token_t *token);
@@ -110,6 +125,7 @@ int ms_runner(list_t *tokens, ms_shell_context_t *context);
 int run_command(char **args, ms_shell_context_t *context);
 int visit_simple_command(ms_syntax_tree_t *node, ms_shell_context_t *context,
     int fdin, int fdout);
+int ms_prompt(ms_shell_context_t *context, char *type);
 
 // Pipelines
 int pipeline_handler(ms_syntax_tree_t *node, ms_shell_context_t *context);
@@ -118,7 +134,11 @@ int pipeline_handler(ms_syntax_tree_t *node, ms_shell_context_t *context);
 list_t *cut_words(char *string);
 
 // Path expansion
-char *expand_paths(char *string, ms_shell_context_t *ctx, ssize_t len);
+char *expand_paths(char *string, ms_shell_context_t *ctx);
+
+// Redirections
+int visit_redirection(ms_syntax_tree_t *node,
+    ms_shell_context_t *context, int *fdin, int *fdout);
 
 int my_strindexof(char const *str, char c);
 

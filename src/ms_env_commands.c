@@ -18,9 +18,8 @@ int ms_env_unset(char **args, ms_shell_context_t *context)
         my_dprintf(2, "unsetenv: Too few arguments.\n");
         return 1;
     }
-    for (int i = 0; args[i]; i++) {
-        ms_unset_env_value(args[i], context);
-    }
+    for (int i = 0; args[i]; i++)
+        km_unset(args[i], &context->env);
     return 0;
 }
 
@@ -71,8 +70,8 @@ int ms_env_setenv(char **args, ms_shell_context_t *context)
     if (ms_valid_envname(args[0]))
         return 1;
     if (args[1])
-        ms_set_env_value(args[0], args[1], context);
+        km_set(args[0], args[1], &context->env);
     else
-        ms_set_env_value(args[0], "", context);
+        km_set(args[0], "", &context->env);
     return 0;
 }

@@ -119,7 +119,7 @@ static int cd_empty_dest(ms_shell_context_t *context, char **expr)
     if (!expr || !context)
         return 1;
     safe_free(expr);
-    *expr = my_strdup(ms_get_env_value(MYSH_HOME_ENV, context, 0));
+    *expr = my_strdup(km_get_or_default(MYSH_HOME_ENV, context->env, NULL));
     if (!*expr) {
         my_dprintf(2, "cd: No home directory.\n");
         return 1;
@@ -166,7 +166,7 @@ int run_cd(char **args, ms_shell_context_t *context)
     if (status != 0)
         my_dprintf(2, "%s: %s.\n", expr, strerror(errno));
     cwd_buffer = getcwd(NULL, 0);
-    ms_set_env_value(MYSH_CWD_ENV, cwd_buffer, context);
+    km_set(MYSH_CWD_ENV, cwd_buffer, &context->env);
     safe_free(&cwd_buffer);
     safe_free(&expr);
     return status != 0;

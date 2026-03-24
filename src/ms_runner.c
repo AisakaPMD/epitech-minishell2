@@ -44,7 +44,7 @@ static int visit_command(ms_syntax_tree_t *node,
         return 84;
     if (node->type != MS_TREE_COMMAND)
         return 84;
-    args = calloc(ll_size(node->children) + 1, sizeof(char *));
+    args = my_calloc(ll_size(node->children) + 1, sizeof(char *));
     if (!args)
         return 84;
     for (int i = 0; node->children; i++) {
@@ -54,55 +54,6 @@ static int visit_command(ms_syntax_tree_t *node,
         args[i] = ll_shift(&word->children);
     }
     return trigger_command(args, context, fdin, fdout);
-}
-
-static int redirect_out(int *fdout, char *word, bool append)
-{
-    if (*fdout != STDOUT_FILENO) {
-        fprintf(stderr, "Ambiguous output redirect.\n");
-        return 1;
-    }
-    *fdout = open(word, O_WRONLY | O_CREAT | (!append ? O_TRUNC : O_APPEND),
-        0644);
-    if (*fdout == -1)
-        return 1;
-    return 0;
-}
-
-static int redirect_in(int *fdin, char *word, bool heredoc)
-{
-    if (*fdin != STDIN_FILENO) {
-        fprintf(stderr, "Ambiguous input redirect.\n");
-        return 1;
-    }
-    if (!heredoc) {
-        *fdin = open(word, O_RDONLY, 0);
-        if (*fdin == -1)
-            return 1;
-        return 0;
-    }
-    return 0;
-}
-
-static int visit_redirection(ms_syntax_tree_t *node,
-    ms_shell_context_t *context, int *fdin, int *fdout)
-{
-    ms_token_t *type;
-    ms_syntax_tree_t *word;
-
-    if (!node || !context)
-        return 84;
-    if (node->type != MS_TREE_REDIRECTION)
-        return 84;
-    type = ll_shift(&node->children);
-    word = ll_shift(&node->children);
-    if (!type || !word)
-        return 84;
-    if (RD_OUT(type->type))
-        return redirect_out(fdout, ll_shift(&word->children),
-            type->type == MS_TOKEN_DOUBLE_GREATER);
-    return redirect_in(fdin, ll_shift(&word->children),
-        type->type == MS_TOKEN_DOUBLE_LESS);
 }
 
 int visit_simple_command(ms_syntax_tree_t *node, ms_shell_context_t *context,
