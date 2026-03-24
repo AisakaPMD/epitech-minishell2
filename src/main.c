@@ -108,7 +108,7 @@ int main(int argc, char **argv, char **env)
     while (return_value == 0)
         return_value = main_loop(&context, context.reader);
     ms_teardown(&context);
-    if (!isatty(STDIN_FILENO))
+    if (isatty(STDIN_FILENO))
         my_putstr("\n");
     return return_value == -1 ? context.last_exit_status : return_value;
 }
