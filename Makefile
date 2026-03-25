@@ -11,10 +11,10 @@
 NAME = mysh
 SRC_FILENAMES = main.c ms_explode.c ms_utils.c ms_path_explorer.c \
 	ms_env_manager.c ms_env_commands.c ms_dir_commands.c \
-	ms_command_parser.c ms_variables.c ms_strutils.c \
+	ms_command_parser.c ms_errors.c ms_strutils.c \
 	ms_grammar.c ms_grammar_tools.c ms_runner.c ms_type_utils.c \
 	ms_pipeline.c ms_path_expansion.c ms_redirections.c \
-	ms_linereader.c ms_prompts.c ms_keymap.c
+	ms_linereader.c ms_prompts.c ms_keymap.c ms_verifiers.c
 HEADERS = minishell1.h benjalib.h
 
 

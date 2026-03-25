@@ -65,14 +65,14 @@ static int process_line_v2(ms_shell_context_t *context, char *line)
     char *expanded;
 
     if (!context || !line)
-        return 84;
+        return 1;
     expanded = expand_paths(line, context);
     if (!expanded)
-        return 84;
+        return 1;
     tokens = cut_words(expanded);
     free(expanded);
     if (!tokens)
-        return 84;
+        return 1;
     return ms_runner(tokens, context);
 }
 
@@ -100,6 +100,7 @@ int main(int argc, char **argv, char **env)
     ms_shell_context_t context = {0};
     int return_value = 0;
 
+    context.is_interactive = isatty(STDIN_FILENO);
     ms_populate_env_from_dump(env, &context);
     prepare_variables(&context);
     context.reader = lr_from_stream(stdin);
@@ -108,7 +109,7 @@ int main(int argc, char **argv, char **env)
     while (return_value == 0)
         return_value = main_loop(&context, context.reader);
     ms_teardown(&context);
-    if (isatty(STDIN_FILENO))
+    if (context.is_interactive)
         my_putstr("\n");
     return return_value == -1 ? context.last_exit_status : return_value;
 }

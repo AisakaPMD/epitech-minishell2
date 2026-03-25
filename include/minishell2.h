@@ -72,9 +72,18 @@ typedef enum {
     MS_TREE_SIMPLE_COMMAND
 } ms_tree_type_t;
 
+typedef enum {
+    MSE_AMBIGUOUS_OUTPUT,
+    MSE_AMBIGUOUS_INPUT,
+    MSE_MISSING_NAME_REDIRECT,
+    MSE_NULL_COMMAND,
+    MSE_COMMAND_NOT_FOUND,
+} ms_error_t;
+
 typedef struct {
     ms_token_type_t type;
     char *word_value;
+    int line;
 } ms_token_t;
 
 typedef struct {
@@ -91,12 +100,19 @@ struct ms_parser_s {
 struct ms_grammar_parser_s {
     list_t *tokens;
     bool errored;
+    ms_shell_context_t *ctx_ref;
 };
 
 typedef struct {
     list_t *children;
     ms_tree_type_t type;
+    ms_shell_context_t *ctx_ref;
 } ms_syntax_tree_t;
+
+// Error Utils
+int ms_fail(ms_shell_context_t *context, ms_error_t error);
+int ms_fail_parse(ms_shell_context_t *context, ms_error_t error,
+    ms_token_t *token);
 
 // LineReader util
 linereader_t *lr_new(const char *filename);
@@ -118,7 +134,9 @@ ms_token_t *gr_consume(ms_grammar_parser_t *grammar);
 bool gr_at_end(ms_grammar_parser_t *grammar);
 
 // Grammar Parser
-ms_syntax_tree_t *ms_generate_ast(list_t *tokens);
+ms_syntax_tree_t *ms_generate_ast(list_t *tokens, ms_shell_context_t *context);
+bool verify_pipeline(ms_syntax_tree_t *pipeline);
+
 
 // Running
 int ms_runner(list_t *tokens, ms_shell_context_t *context);

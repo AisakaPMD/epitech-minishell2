@@ -63,7 +63,7 @@ int ms_prompt(ms_shell_context_t *context, char *type)
 
     if (!context)
         return 1;
-    if (!isatty(STDIN_FILENO))
+    if (!context->is_interactive)
         return 0;
     prompt = km_get(type, context->variables);
     if (!prompt)

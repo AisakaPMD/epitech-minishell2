@@ -23,6 +23,9 @@
     #define MYSH_MSG_SIGOTHER "Process terminated by signal %d"
     #define MYSH_MSG_COREDUMP " (core dumped)"
 
+    #define MYSH_ERROR 1
+    #define MYSH_SUCCESS 0
+
 typedef struct ms_shell_context_s ms_shell_context_t;
 typedef struct ms_env_entry_s ms_env_entry_t;
 typedef struct km_entry_s km_entry_t;
@@ -43,6 +46,7 @@ typedef struct {
     char *buf;
     size_t size;
     bool open_by_linereader;
+    int line;
 } linereader_t;
 
 struct ms_shell_context_s {
@@ -54,6 +58,7 @@ struct ms_shell_context_s {
     keymap_t *variables;
     keymap_t *env;
     linereader_t *reader;
+    bool is_interactive;
 };
 
 // Main
@@ -85,9 +90,6 @@ char *km_get_or_default(char *key, keymap_t *keymap, char *deflt);
 // Env utils
 void ms_populate_env_from_dump(char **env_dump, ms_shell_context_t *context);
 char **ms_dump_env(ms_shell_context_t *context);
-void ms_set_env_value(char *key, char *value, ms_shell_context_t *context);
-char *ms_get_env_value(char *key, ms_shell_context_t *context, char emptynull);
-void ms_unset_env_value(char *key, ms_shell_context_t *context);
 
 // Env commands
 int ms_env_setenv(char **args, ms_shell_context_t *context);

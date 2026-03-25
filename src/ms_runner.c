@@ -41,16 +41,16 @@ static int visit_command(ms_syntax_tree_t *node,
     ms_syntax_tree_t *word;
 
     if (!node || !context)
-        return 84;
+        return MYSH_ERROR;
     if (node->type != MS_TREE_COMMAND)
-        return 84;
+        return MYSH_ERROR;
     args = my_calloc(ll_size(node->children) + 1, sizeof(char *));
     if (!args)
-        return 84;
+        return MYSH_ERROR;
     for (int i = 0; node->children; i++) {
         word = ll_shift(&node->children);
         if (word->type != MS_TREE_WORD)
-            return 84;
+            return MYSH_ERROR;
         args[i] = ll_shift(&word->children);
     }
     return trigger_command(args, context, fdin, fdout);
@@ -64,10 +64,10 @@ int visit_simple_command(ms_syntax_tree_t *node, ms_shell_context_t *context,
     int redir_status = 0;
 
     if (!node || !context)
-        return 84;
+        return MYSH_ERROR;
     if (!node->children || ((ms_syntax_tree_t *) node->children->data)->type
         != MS_TREE_COMMAND)
-        return 84;
+        return MYSH_ERROR;
     cmd = ll_shift(&node->children);
     while (node->children) {
         child = ll_shift(&node->children);
@@ -84,7 +84,7 @@ static int visit_pipeline(ms_syntax_tree_t *node, ms_shell_context_t *context)
     int status = 0;
 
     if (VIS_VALID(node && context, node, MS_TREE_PIPELINE))
-        return 84;
+        return MYSH_ERROR;
     if (node->children && !node->children->next)
         return visit_simple_command(ll_shift(&node->children), context,
             STDIN_FILENO, STDOUT_FILENO);
@@ -92,9 +92,9 @@ static int visit_pipeline(ms_syntax_tree_t *node, ms_shell_context_t *context)
     if (pid == 0)
         exit(pipeline_handler(node, context));
     if (pid == -1)
-        return 84;
+        return MYSH_ERROR;
     waitpid(pid, &status, 0);
-    return status;
+    return WIFEXITED(status) ? WEXITSTATUS(status) : WSTOPSIG(status) + 128;
 }
 
 static int visit_and_or(ms_syntax_tree_t *node, ms_shell_context_t *context)
@@ -132,9 +132,9 @@ int ms_runner(list_t *tokens, ms_shell_context_t *context)
     ms_syntax_tree_t *ast;
 
     if (!tokens || !context)
-        return 84;
-    ast = ms_generate_ast(tokens);
+        return 1;
+    ast = ms_generate_ast(tokens, context);
     if (!ast)
-        return 84;
+        return 1;
     return visit_sequence(ast, context);
 }

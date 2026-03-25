@@ -61,20 +61,21 @@ static int build_pipeline(ms_syntax_tree_t *node, ms_shell_context_t *context,
 int pipeline_handler(ms_syntax_tree_t *node, ms_shell_context_t *context)
 {
     int status = 0;
+    int final_status = 0;
     int lastin = STDIN_FILENO;
     int nb_nodes = ll_size(node->children);
     pid_t pid[nb_nodes];
 
     status = build_pipeline(node, context, &lastin, pid);
     if (status) {
-        context->last_exit_status = status;
         my_dprintf(STDERR_FILENO, "Pipeline error: %s\n", strerror(status));
         return status;
     }
     for (int index = 0; index < nb_nodes; index++) {
         waitpid(pid[index], &status, 0);
         if (status != 0)
-            context->last_exit_status = status;
+            final_status = WIFEXITED(status) ?
+                WEXITSTATUS(status) : WTERMSIG(status);
     }
-    return context->last_exit_status;
+    return final_status;
 }

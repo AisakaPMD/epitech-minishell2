@@ -36,6 +36,7 @@ linereader_t *lr_from_stream(FILE *stream)
     if (!lr)
         return NULL;
     lr->stream = stream;
+    lr->line = 0;
     lr->buf = NULL;
     lr->size = 0;
     lr->open_by_linereader = false;
@@ -67,5 +68,6 @@ char *lr_read(linereader_t *fr)
         return NULL;
     if (dup[read_count - 1] == '\n')
         dup[read_count - 1] = '\0';
+    fr->line++;
     return dup;
 }
