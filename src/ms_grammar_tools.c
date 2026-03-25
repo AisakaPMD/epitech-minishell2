@@ -44,9 +44,15 @@ ms_token_t *gr_consume(ms_grammar_parser_t *grammar)
     return ll_shift(&grammar->tokens);
 }
 
-ms_token_t *gr_match(ms_grammar_parser_t *grammar, ms_token_type_t type)
+ms_token_t *gr_match(ms_grammar_parser_t *grammar, ms_token_type_t type,
+    bool destroy)
 {
-    if (gr_testfor(grammar, type))
-        return gr_consume(grammar);
-    return NULL;
+    ms_token_t *token;
+
+    if (!gr_testfor(grammar, type))
+        return NULL;
+    token = gr_consume(grammar);
+    if (destroy)
+        free_token(token);
+    return token;
 }

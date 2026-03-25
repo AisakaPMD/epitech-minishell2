@@ -30,6 +30,7 @@ static pid_t forked_simple_command(ms_syntax_tree_t *node,
         close(fdout);
         exit(visit_status);
     }
+    free_ast(node);
     return pid;
 }
 
@@ -47,7 +48,7 @@ static int build_pipeline(ms_syntax_tree_t *node, ms_shell_context_t *context,
         else
             piped[1] = STDOUT_FILENO;
         if (!pipe_status)
-            return 84;
+            return MYSH_ERROR;
         pid[index] = forked_simple_command(child, context, *lastin, piped[1]);
         if (*lastin != STDIN_FILENO)
             close(*lastin);
@@ -55,7 +56,7 @@ static int build_pipeline(ms_syntax_tree_t *node, ms_shell_context_t *context,
             close(piped[1]);
         *lastin = piped[0];
     }
-    return 0;
+    return MYSH_SUCCESS;
 }
 
 int pipeline_handler(ms_syntax_tree_t *node, ms_shell_context_t *context)
@@ -67,6 +68,8 @@ int pipeline_handler(ms_syntax_tree_t *node, ms_shell_context_t *context)
     pid_t pid[nb_nodes];
 
     status = build_pipeline(node, context, &lastin, pid);
+    free_ast(node->root_ref);
+    ms_teardown(context);
     if (status) {
         my_dprintf(STDERR_FILENO, "Pipeline error: %s\n", strerror(status));
         return status;

@@ -36,6 +36,7 @@
 
 typedef struct ms_parser_s ms_parser_t;
 typedef struct ms_grammar_parser_s ms_grammar_parser_t;
+typedef struct ms_syntax_tree_s ms_syntax_tree_t;
 
 typedef enum {
     MS_QUOTE_NONE,
@@ -103,11 +104,12 @@ struct ms_grammar_parser_s {
     ms_shell_context_t *ctx_ref;
 };
 
-typedef struct {
+struct ms_syntax_tree_s {
     list_t *children;
     ms_tree_type_t type;
     ms_shell_context_t *ctx_ref;
-} ms_syntax_tree_t;
+    ms_syntax_tree_t *root_ref;
+};
 
 // Error Utils
 int ms_fail(ms_shell_context_t *context, ms_error_t error);
@@ -120,6 +122,11 @@ linereader_t *lr_from_stream(FILE *stream);
 void lr_close(linereader_t *fr);
 char *lr_read(linereader_t *fr);
 
+// Misc Utils
+void free_batch(int count, ...);
+void free_grammar(ms_grammar_parser_t *grammar);
+void free_ast(ms_syntax_tree_t *node);
+void free_token(ms_token_t *token);
 
 // Enum to string utils
 char *ms_tree_type_to_str(ms_tree_type_t type);
@@ -127,7 +134,8 @@ char *ms_token_to_str(ms_token_t *token);
 void print_tree(ms_syntax_tree_t *tree, int depth);
 
 // Grammar Parser Utils
-ms_token_t *gr_match(ms_grammar_parser_t *grammar, ms_token_type_t type);
+ms_token_t *gr_match(ms_grammar_parser_t *grammar, ms_token_type_t type,
+    bool destroy);
 bool gr_testahead(ms_grammar_parser_t *grammar, ms_token_type_t type);
 bool gr_testfor(ms_grammar_parser_t *grammar, ms_token_type_t type);
 ms_token_t *gr_consume(ms_grammar_parser_t *grammar);

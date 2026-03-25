@@ -13,17 +13,10 @@
 
 #include "minishell2.h"
 
+// Unimplemented due to limitations
 linereader_t *lr_new(const char *filename)
 {
-    linereader_t *lr;
-
-    if (!filename)
-        return NULL;
-    lr = lr_from_stream(fopen(filename, "r"));
-    if (!lr)
-        return NULL;
-    lr->open_by_linereader = true;
-    return lr;
+    return NULL;
 }
 
 linereader_t *lr_from_stream(FILE *stream)
@@ -47,8 +40,6 @@ void lr_close(linereader_t *fr)
 {
     if (!fr)
         return;
-    if (fr->open_by_linereader)
-        fclose(fr->stream);
     free(fr->buf);
     free(fr);
 }

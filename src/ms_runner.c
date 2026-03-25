@@ -24,7 +24,7 @@ static int trigger_command(char **args, ms_shell_context_t *context,
     dup2(in, STDIN_FILENO);
     dup2(out, STDOUT_FILENO);
     res = run_command(args, context);
-    free(args);
+    free_str_arr(args);
     if (in != STDIN_FILENO)
         close(in);
     if (out != STDOUT_FILENO)
@@ -52,7 +52,9 @@ static int visit_command(ms_syntax_tree_t *node,
         if (word->type != MS_TREE_WORD)
             return MYSH_ERROR;
         args[i] = ll_shift(&word->children);
+        free(word);
     }
+    free(node);
     return trigger_command(args, context, fdin, fdout);
 }
 
@@ -72,9 +74,11 @@ int visit_simple_command(ms_syntax_tree_t *node, ms_shell_context_t *context,
     while (node->children) {
         child = ll_shift(&node->children);
         redir_status = visit_redirection(child, context, &fdin, &fdout);
+        free(child);
         if (redir_status)
             return redir_status;
     }
+    free(node);
     return visit_command(cmd, context, fdin, fdout);
 }
 
@@ -85,15 +89,19 @@ static int visit_pipeline(ms_syntax_tree_t *node, ms_shell_context_t *context)
 
     if (VIS_VALID(node && context, node, MS_TREE_PIPELINE))
         return MYSH_ERROR;
-    if (node->children && !node->children->next)
-        return visit_simple_command(ll_shift(&node->children), context,
+    if (node->children && !node->children->next) {
+        status = visit_simple_command(ll_shift(&node->children), context,
             STDIN_FILENO, STDOUT_FILENO);
+        free(node);
+        return status;
+    }
     pid = fork();
     if (pid == 0)
         exit(pipeline_handler(node, context));
     if (pid == -1)
         return MYSH_ERROR;
     waitpid(pid, &status, 0);
+    free_ast(node);
     return WIFEXITED(status) ? WEXITSTATUS(status) : WSTOPSIG(status) + 128;
 }
 
@@ -123,6 +131,7 @@ static int visit_sequence(ms_syntax_tree_t *node, ms_shell_context_t *context)
         res = visit_and_or(child, context);
         if (res != 0)
             context->last_exit_status = res;
+        safe_free(&child);
     }
     return res;
 }
@@ -130,11 +139,14 @@ static int visit_sequence(ms_syntax_tree_t *node, ms_shell_context_t *context)
 int ms_runner(list_t *tokens, ms_shell_context_t *context)
 {
     ms_syntax_tree_t *ast;
+    int run_result = 0;
 
     if (!tokens || !context)
-        return 1;
+        return MYSH_ERROR;
     ast = ms_generate_ast(tokens, context);
     if (!ast)
-        return 1;
-    return visit_sequence(ast, context);
+        return MYSH_ERROR;
+    run_result = visit_sequence(ast, context);
+    free_ast(ast);
+    return run_result;
 }

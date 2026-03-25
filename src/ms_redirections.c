@@ -22,6 +22,7 @@ static int redirect_out(int *fdout, char *word, bool append)
     }
     *fdout = open(word, O_WRONLY | O_CREAT | (!append ? O_TRUNC : O_APPEND),
         0644);
+    free(word);
     if (*fdout == -1)
         return 1;
     return 0;
@@ -55,6 +56,7 @@ static int redirect_heredoc(int *fdin, char *word, ms_shell_context_t *context)
         return 1;
     *fdin = pipefd[0];
     res = read_heredoc(pipefd[1], word, context);
+    free(word);
     close(pipefd[1]);
     if (res != 0)
         close(*fdin);
@@ -70,6 +72,7 @@ static int redirect_in(int *fdin, char *word, bool heredoc,
     }
     if (!heredoc) {
         *fdin = open(word, O_RDONLY, 0);
+        free(word);
         if (*fdin == -1)
             return 1;
         return 0;
@@ -82,18 +85,22 @@ int visit_redirection(ms_syntax_tree_t *node,
 {
     ms_token_t *type;
     ms_syntax_tree_t *word;
+    int result = MYSH_SUCCESS;
 
     if (!node || !context)
-        return 84;
+        return MYSH_ERROR;
     if (node->type != MS_TREE_REDIRECTION)
-        return 84;
+        return MYSH_ERROR;
     type = ll_shift(&node->children);
     word = ll_shift(&node->children);
     if (!type || !word)
-        return 84;
+        return MYSH_ERROR;
     if (RD_OUT(type->type))
-        return redirect_out(fdout, ll_shift(&word->children),
+        result = redirect_out(fdout, ll_shift(&word->children),
             type->type == MS_TOKEN_DOUBLE_GREATER);
-    return redirect_in(fdin, ll_shift(&word->children),
-        type->type == MS_TOKEN_DOUBLE_LESS, context);
+    else
+        result = redirect_in(fdin, ll_shift(&word->children),
+            type->type == MS_TOKEN_DOUBLE_LESS, context);
+    free_batch(2, type, word);
+    return result;
 }

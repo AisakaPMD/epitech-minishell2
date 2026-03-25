@@ -48,7 +48,50 @@ char *ms_token_to_str(ms_token_t *token)
     }
 }
 
+static void indent_print(int indent, char *format, ...)
+{
+    va_list lst;
+
+    va_start(lst, format);
+    for (int i = 0; i < indent; i++)
+        my_putchar(' ');
+    my_vprintf(format, lst);
+    va_end(lst);
+}
+
+static bool print_tree_word(ms_syntax_tree_t *tree, int depth)
+{
+    if (tree->type == MS_TREE_WORD) {
+        indent_print(depth, " > WORD [%s]\n",
+            (char *) tree->children->data);
+        return true;
+    }
+    return false;
+}
+
 void print_tree(ms_syntax_tree_t *tree, int depth)
+{
+    ms_token_t *tk;
+    list_t *lst;
+
+    if (!tree)
+        return;
+    if (print_tree_word(tree, depth))
+        return;
+    indent_print(depth, " > %s\n", ms_tree_type_to_str(tree->type));
+    lst = tree->children;
+    if (tree->type == MS_TREE_REDIRECTION) {
+        tk = lst->data;
+        lst = lst->next;
+        indent_print(depth, " > Type: [%s]\n", ms_token_to_str(tk));
+    }
+    while (lst) {
+        tree = lst->data;
+        lst = lst->next;
+        print_tree(tree, depth + 2);
+    }
+}
+/*void print_tree(ms_syntax_tree_t *tree, int depth)
 {
     ms_token_t *tk;
 
@@ -56,7 +99,7 @@ void print_tree(ms_syntax_tree_t *tree, int depth)
         return;
     if (tree->type == MS_TREE_WORD) {
         my_printf("%*s > WORD [%s]\n", depth, " ",
-            (char *) ll_shift(&tree->children));
+            (char *) tree->children->data);
         return;
     }
     my_printf("%*s > %s\n", depth, "", ms_tree_type_to_str(tree->type));
@@ -67,4 +110,4 @@ void print_tree(ms_syntax_tree_t *tree, int depth)
     while (tree->children) {
         print_tree(ll_shift(&tree->children), depth + 2);
     }
-}
+}*/

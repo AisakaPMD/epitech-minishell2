@@ -92,7 +92,7 @@ static int verify_exit_validity(char **args, int *status)
         my_fputs(2, "exit: Expression Syntax.\n");
         return 1;
     }
-    if (!args[1] || strlen(args[1]) == 0)
+    if (!args[1] || my_strlen(args[1]) == 0)
         return 0;
     if (!my_str_isnumerical(args[1])) {
         my_dprintf(2, "exit: %s.\n", my_isnumerical(args[1][0]) ?
@@ -136,7 +136,7 @@ static char *cd_destination(char **args, ms_shell_context_t *context)
         return NULL;
     }
     expr = my_strdup(args[0]);
-    if (!expr || strlen(expr) == 0) {
+    if (!expr || my_strlen(expr) == 0) {
         if (cd_empty_dest(context, &expr))
             return NULL;
         return expr;
