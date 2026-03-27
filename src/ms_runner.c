@@ -84,7 +84,6 @@ int visit_simple_command(ms_syntax_tree_t *node, ms_shell_context_t *context,
 
 static int visit_pipeline(ms_syntax_tree_t *node, ms_shell_context_t *context)
 {
-    pid_t pid;
     int status = 0;
 
     if (VIS_VALID(node && context, node, MS_TREE_PIPELINE))
@@ -95,14 +94,7 @@ static int visit_pipeline(ms_syntax_tree_t *node, ms_shell_context_t *context)
         free(node);
         return status;
     }
-    pid = fork();
-    if (pid == 0)
-        exit(pipeline_handler(node, context));
-    if (pid == -1)
-        return MYSH_ERROR;
-    waitpid(pid, &status, 0);
-    free_ast(node);
-    return WIFEXITED(status) ? WEXITSTATUS(status) : WSTOPSIG(status) + 128;
+    return pipeline_handler(node, context);
 }
 
 static int visit_and_or(ms_syntax_tree_t *node, ms_shell_context_t *context)

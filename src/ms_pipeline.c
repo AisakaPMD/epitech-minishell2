@@ -23,6 +23,8 @@ static pid_t forked_simple_command(ms_syntax_tree_t *node,
 
     if (!node || !context)
         return -1;
+    if (fdout == STDOUT_FILENO)
+        return visit_simple_command(node, context, fdin, fdout);
     pid = fork();
     if (pid == 0) {
         visit_status = visit_simple_command(node, context, fdin, fdout);
@@ -59,6 +61,20 @@ static int build_pipeline(ms_syntax_tree_t *node, ms_shell_context_t *context,
     return MYSH_SUCCESS;
 }
 
+static int wait_and_compute_status(pid_t pid, int current_status, bool last)
+{
+    int status = 0;
+
+    if (!last) {
+        waitpid(pid, &status, 0);
+        if (status) {
+            return WIFEXITED(status) ? WEXITSTATUS(status) : WTERMSIG(status);
+        }
+    } else if (pid != 0)
+        return pid;
+    return current_status;
+}
+
 int pipeline_handler(ms_syntax_tree_t *node, ms_shell_context_t *context)
 {
     int status = 0;
@@ -68,17 +84,11 @@ int pipeline_handler(ms_syntax_tree_t *node, ms_shell_context_t *context)
     pid_t pid[nb_nodes];
 
     status = build_pipeline(node, context, &lastin, pid);
-    free_ast(node->root_ref);
-    ms_teardown(context);
-    if (status) {
-        my_dprintf(STDERR_FILENO, "Pipeline error: %s\n", strerror(status));
-        return status;
-    }
+    if (status)
+        return error("Pipeline error: %s\n", strerror(status));
     for (int index = 0; index < nb_nodes; index++) {
-        waitpid(pid[index], &status, 0);
-        if (status != 0)
-            final_status = WIFEXITED(status) ?
-                WEXITSTATUS(status) : WTERMSIG(status);
+        final_status = wait_and_compute_status(pid[index],
+            final_status, index == nb_nodes - 1);
     }
     return final_status;
 }
