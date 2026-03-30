@@ -3,7 +3,7 @@ name: Check compilation and coding style
 on: [push, pull_request]
 
 env:
-  MIRROR_SSH_URL: "git@github.com:EpitechPGE1-2025/G-DOP-200-STG-2-1-chocolatine-1.git"
+  MIRROR_SSH_URL: "github.com/EpitechPGE1-2025/G-DOP-200-STG-2-1-chocolatine-1.git"
   EXECUTABLES: "bin/mysh"
 
 jobs:
@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Run banana check
         run: banana-check-repo
@@ -57,3 +57,44 @@ jobs:
               exit 1
             fi
           done
+
+  run_tests:
+    if: >
+      !startsWith(github.ref, 'refs/heads/no-ga/') &&
+      github.repository != 'EpitechPGE1-2025/G-DOP-200-STG-2-1-chocolatine-1'
+
+    runs-on: ubuntu-latest
+
+    container:
+      image: epitechcontent/epitest-docker
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Run unit tests
+        run: make tests_run
+        timeout-minutes: 2
+
+
+  push_to_mirror:
+    if: >
+      !startsWith(github.ref, 'refs/heads/no-ga/') &&
+      github.repository != 'EpitechPGE1-2025/G-DOP-200-STG-2-1-chocolatine-1' &&
+      github.event_name == 'push'
+    needs: check_compilation_and_coding_style
+    runs-on: ubuntu-latest
+
+    container:
+      image: epitechcontent/epitest-docker
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Push mirror
+        run: |
+          git remote add mirror https://x-access-token:${{ secrets.GIT_SSH_PRIVATE_KEY }}@${{ env.MIRROR_SSH_URL }}
+          git push --mirror mirror
+
