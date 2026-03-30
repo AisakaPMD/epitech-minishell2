@@ -59,6 +59,7 @@ jobs:
           done
 
   run_tests:
+    needs: check_compilation_and_coding_style
     if: >
       !startsWith(github.ref, 'refs/heads/no-ga/') &&
       github.repository != 'EpitechPGE1-2025/G-DOP-200-STG-2-1-chocolatine-1'
@@ -82,7 +83,7 @@ jobs:
       !startsWith(github.ref, 'refs/heads/no-ga/') &&
       github.repository != 'EpitechPGE1-2025/G-DOP-200-STG-2-1-chocolatine-1' &&
       github.event_name == 'push'
-    needs: check_compilation_and_coding_style
+    needs: run_tests
     runs-on: ubuntu-latest
 
     container:
@@ -93,6 +94,8 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+      - name: Mark repo as safe
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Push mirror
         run: |
           git remote add mirror https://x-access-token:${{ secrets.GIT_SSH_PRIVATE_KEY }}@${{ env.MIRROR_SSH_URL }}
