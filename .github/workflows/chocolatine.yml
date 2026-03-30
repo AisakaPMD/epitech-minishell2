@@ -1,0 +1,59 @@
+name: Check compilation and coding style
+
+on: [push, pull_request]
+
+env:
+  MIRROR_SSH_URL: "git@github.com:EpitechPGE1-2025/G-DOP-200-STG-2-1-chocolatine-1.git"
+  EXECUTABLES: "bin/mysh"
+
+jobs:
+  check_compilation_and_coding_style:
+    if: >
+      !startsWith(github.ref, 'refs/heads/no-ga/') &&
+      github.repository != 'EpitechPGE1-2025/G-DOP-200-STG-2-1-chocolatine-1'
+
+    runs-on: ubuntu-latest
+
+    container:
+      image: epitechcontent/epitest-docker
+
+    env:
+      CC: epiclang
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run banana check
+        run: banana-check-repo
+
+      - name: Compile project
+        run: make
+        timeout-minutes: 2
+
+      - name: Show coding style errors
+        run: |
+          if [ -f banana.log ]; then
+            while IFS= read -r line; do
+              echo "::error::$line"
+            done < banana.log
+          fi
+
+      - name: Fail if coding style errors
+        run: |
+          if [ -s banana.log ]; then
+            echo "Coding style errors detected"
+            exit 1
+          fi
+
+      - name: Clean project
+        run: make clean
+
+      - name: Check executables
+        run: |
+          for exe in $EXECUTABLES; do
+            if [ ! -x "$exe" ]; then
+              echo "Executable $exe is missing or not executable"
+              exit 1
+            fi
+          done
