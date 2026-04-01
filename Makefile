@@ -82,4 +82,7 @@ codingstyle:
 	rm -rf $(BIN_DIR)
 	$(MAKE) all
 
-.PHONY: re fclean clean all codingstyle run
+tests_run:
+	echo Not implemented yet.
+
+.PHONY: re fclean clean all codingstyle run tests_run
