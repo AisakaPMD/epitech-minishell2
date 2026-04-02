@@ -37,7 +37,7 @@ int ms_fail_parse(ms_shell_context_t *context, ms_error_t error,
     ms_token_t *token)
 {
     if (context->is_interactive)
-        my_dprintf(2, "%s\n", interactive_errs[error]);
+        my_dprintf(2 , "%s\n", interactive_errs[error]);
     else {
         if (token == NULL)
             my_dprintf(2, "ParseError: %s\n", script_errs[error]);

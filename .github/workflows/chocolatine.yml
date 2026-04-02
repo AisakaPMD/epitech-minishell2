@@ -1,16 +1,20 @@
 name: Check compilation and coding style
 
-on: [push, pull_request]
+on:
+  push:
+    branches-ignore:
+      - no-ga/*
+  pull_request:
+    branches-ignore:
+      - no-ga/*
 
 env:
   MIRROR_SSH_URL: "git@github.com:EpitechPGE1-2025/G-DOP-200-STG-2-1-chocolatine-1.git"
-  EXECUTABLES: "bin/mysh"
+  EXECUTABLES: "bin/mysh bin/failer"
 
 jobs:
   check_compilation_and_coding_style:
-    if: >
-      !startsWith(github.ref, 'refs/heads/no-ga/') &&
-      github.repository != 'EpitechPGE1-2025/G-DOP-200-STG-2-1-chocolatine-1'
+    if: github.event.forced != true
 
     runs-on: ubuntu-latest
 
@@ -60,9 +64,6 @@ jobs:
 
   run_tests:
     needs: check_compilation_and_coding_style
-    if: >
-      !startsWith(github.ref, 'refs/heads/no-ga/') &&
-      github.repository != 'EpitechPGE1-2025/G-DOP-200-STG-2-1-chocolatine-1'
 
     runs-on: ubuntu-latest
 
@@ -79,10 +80,7 @@ jobs:
 
 
   push_to_mirror:
-    if: >
-      !startsWith(github.ref, 'refs/heads/no-ga/') &&
-      github.repository != 'EpitechPGE1-2025/G-DOP-200-STG-2-1-chocolatine-1' &&
-      github.event_name == 'push'
+    if: github.event_name == 'push'
     needs: run_tests
     runs-on: ubuntu-latest
 
