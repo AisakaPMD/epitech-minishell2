@@ -32,7 +32,8 @@ jobs:
         run: banana-check-repo || true
 
       - name: Compile project
-        run: make 2> >(grep Banana >banana.log)
+        shell: bash
+        run: make 2>stderr.log; grep "Banana" stderr.log > banana.log
         timeout-minutes: 2
 
       - name: Show coding style errors
