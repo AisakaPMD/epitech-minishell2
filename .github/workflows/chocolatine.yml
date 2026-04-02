@@ -37,7 +37,7 @@ jobs:
 
       - name: Show coding style errors
         run: |
-          if [ -f banana.log ]; then
+          if [ -s banana.log ]; then
             while IFS= read -r line; do
               echo "::error::$line"
             done < banana.log
