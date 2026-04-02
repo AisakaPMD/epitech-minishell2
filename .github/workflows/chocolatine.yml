@@ -32,7 +32,7 @@ jobs:
         run: banana-check-repo || true
 
       - name: Compile project
-        run: make 2>stderr.log; grep "Banana" stderr.log > banana.log
+        run: make 2>stderr.log; grep "Banana" stderr.log > banana.log || true
         timeout-minutes: 2
 
       - name: Show coding style errors
