@@ -41,8 +41,8 @@ jobs:
             while IFS= read -r line; do
               echo "::error::$line"
             done < banana.log
-            exit 1
           fi
+          [ -s banana.log ] && exit 1
 
       - name: Clean project
         run: make clean
