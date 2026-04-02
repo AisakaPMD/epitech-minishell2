@@ -14,7 +14,7 @@ env:
 
 jobs:
   check_compilation_and_coding_style:
-    if: github.repositoryUrl != env.MIRROR_SSH_URL
+    if: github.repositoryUrl != github.env.MIRROR_SSH_URL
 
     runs-on: ubuntu-latest
 
