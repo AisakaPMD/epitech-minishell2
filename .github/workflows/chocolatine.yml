@@ -14,7 +14,7 @@ env:
 
 jobs:
   check_compilation_and_coding_style:
-    if: ${{ github.event.pull_request.head.repo.ssh_url != env.MIRROR_SSH_URL }}
+    if: ${{ github.event.pull_request.head.repo.ssh_url != github.env.MIRROR_SSH_URL }}
     runs-on: ubuntu-latest
 
     container:
