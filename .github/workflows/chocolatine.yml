@@ -14,7 +14,6 @@ env:
 
 jobs:
   check_compilation_and_coding_style:
-    if: ${{ ! contains( env.MIRROR_SSH_URL , github.repository ) }}
     runs-on: ubuntu-latest
 
     container:
@@ -25,9 +24,10 @@ jobs:
 
     steps:
       - name: Check if on mirror
+        if: ${{ ! contains( env.MIRROR_SSH_URL , github.repository ) }}
         run: |
           if [[ "$MIRROR_SSH_URL" =~ "$GITHUB_REPOSITORY_URL" ]]; then
-            echo "This action is only allowed on the mirror repository"
+            echo "This action is not allowed on the mirror repository"
             exit 1
           fi
 
