@@ -21,8 +21,9 @@ jobs:
 
     env:
       CC: epiclang
-
-    if: ${{ ! contains( vars.MIRROR_SSH_URL , github.repository ) }}
+    if: >
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.ssh_url != env.MIRROR_SSH_URL) ||
+      (github.event_name == 'push' && github.event.repository.ssh_url != env.MIRROR_SSH_URL)
 
     steps:
       - name: Check if on mirror
