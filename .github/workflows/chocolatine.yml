@@ -14,7 +14,7 @@ env:
 
 jobs:
   check_compilation_and_coding_style:
-    if: ${{ ! contains( github.env.MIRROR_SSH_URL , github.repository ) }}
+    if: ${{ ! contains( env.MIRROR_SSH_URL , github.repository ) }}
     runs-on: ubuntu-latest
 
     container:
