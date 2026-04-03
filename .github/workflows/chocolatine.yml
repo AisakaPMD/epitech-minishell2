@@ -43,8 +43,9 @@ jobs:
             while IFS= read -r line; do
               file=$(echo "$line" | cut -d':' -f1)
               lineindex=$(echo "$line" | cut -d':' -f2)
+              col=$(echo "$line" | cut -d':' -f3)
               msg=$(echo "$line" | cut -d':' -f5-)
-              echo "::error file=$file,line=$lineindex::$msg"
+              echo "::error file=$file,line=$lineindex,col=$col,title=Coding Style Error::$msg"
             done < banana.log
             exit 1
           fi
