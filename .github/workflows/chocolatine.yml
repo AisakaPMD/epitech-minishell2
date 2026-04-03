@@ -11,6 +11,7 @@ on:
 env:
   MIRROR_SSH_URL: "git@github.com:EpitechPGE1-2025/G-DOP-200-STG-2-1-chocolatine-1.git"
   EXECUTABLES: "bin/mysh"
+  SKIP: ${{ contains( env.MIRROR_SSH_URL , github.repository ) }}
 
 jobs:
   check_compilation_and_coding_style:
@@ -21,29 +22,23 @@ jobs:
 
     env:
       CC: epiclang
-    if: >
-      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.ssh_url != env.MIRROR_SSH_URL) ||
-      (github.event_name == 'push' && github.event.repository.ssh_url != env.MIRROR_SSH_URL)
 
     steps:
-      - name: Check if on mirror
-        run: |
-          if [[ "$MIRROR_SSH_URL" =~ "$GITHUB_REPOSITORY_URL" ]]; then
-            echo "This action is not allowed on the mirror repository"
-            exit 1
-          fi
-
       - name: Checkout repository
+        if: env.SKIP == 'false'
         uses: actions/checkout@v5
 
       - name: Run banana check
+        if: env.SKIP == 'false'
         run: banana-check-repo || true
 
       - name: Compile project
+        if: env.SKIP == 'false'
         run: make 2>stderr.log; grep "Banana" stderr.log > banana.log || true
         timeout-minutes: 2
 
       - name: Show coding style errors
+        if: env.SKIP == 'false'
         run: |
           if [ -s banana.log ]; then
             while IFS= read -r line; do
@@ -53,9 +48,11 @@ jobs:
           fi
 
       - name: Clean project
+        if: env.SKIP == 'false'
         run: make clean
 
       - name: Check executables
+        if: env.SKIP == 'false'
         run: |
           for exe in $EXECUTABLES; do
             if [ ! -x "$exe" ]; then
