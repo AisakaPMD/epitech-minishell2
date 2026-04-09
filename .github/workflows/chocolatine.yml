@@ -10,7 +10,7 @@ on:
 
 env:
   MIRROR_SSH_URL: "git@github.com:EpitechPGE1-2025/G-DOP-200-STG-2-1-chocolatine-1.git"
-  EXECUTABLES: "bin/m"
+  EXECUTABLES: "bin/my bin/mysh"
 
 jobs:
   check_compilation_and_coding_style:
