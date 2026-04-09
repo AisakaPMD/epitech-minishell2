@@ -39,7 +39,7 @@ void ms_teardown(ms_shell_context_t *context)
     safe_free(&context->line_buffer);
     if (context->reader)
         lr_close(context->reader);
-    context->reader=NULL;
+    context->reader = NULL;
 }
 
 int run_command(char **args, ms_shell_context_t *context)
